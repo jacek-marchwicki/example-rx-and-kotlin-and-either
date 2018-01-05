@@ -223,9 +223,3 @@ interface AuthorizedDao {
 interface AuthorizationDao {
     val authorizedDaoObservable: Observable<Either<DefaultError, AuthorizedDao>>
 }
-
-fun <L, R, TR> Observable<Either<L, R>>.switchMapRightWithEither(function: (R) -> Observable<Either<L, TR>>): Observable<Either<L, TR>> =
-        this.switchMap { it.observableMapRightWithEither(function) }
-
-fun <L, R, TR> Either<L, R>.observableMapRightWithEither(function: (R) -> Observable<Either<L, TR>>): Observable<Either<L, TR>> =
-        this.fold({ Observable.just(Either.left(it)) }, function)
