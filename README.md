@@ -1,4 +1,4 @@
-# Extensions functions for RxJava
+# Extensions functions for RxJava (article draft)
 
 This introduction of some patterns that can be helpful during the implementation of Android applications that operate on some structured data especially downloaded from some kind of API.
 
