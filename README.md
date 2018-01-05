@@ -9,7 +9,7 @@ This introduction of some patterns that can be helpful during the implementation
 
 # Used libraries
 
-**TIP: We use RxJava 1.x but the same practice can be used with RxJava 2.x **
+**TIP:** We use RxJava 1.x but almost the same code can be used with RxJava 2.x
 
 ```groovy
 implementation "io.reactivex:rxjava:1.3.0"
