@@ -1,8 +1,8 @@
 # Extensions functions for RxJava
 
-This introduction of some patterns that can be helpful during implementation of Android applications that operate on some structured data, especially downloaded from some kind of API.
+This introduction of some patterns that can be helpful during the implementation of Android applications that operate on some structured data especially downloaded from some kind of API.
 
-**Warning: Lot of code alert.** Because i'm apps developer and probably you also, I will show lot of code.
+**Warning: Lot of code alert.** Because I'm apps developer and probably you also, I will show a lot of code.
 
 # TL;DR;
 [Full code is available here](https://github.com/jacek-marchwicki/example-rx-and-kotlin-and-either/blob/master/app/src/main/java/com/jacekmarchwicki/examplerxextensions/MainActivity.kt)
@@ -22,7 +22,7 @@ implementation 'com.github.jacek-marchwicki.recyclerview-changes-detector:univer
 # Let’s start with some example
 
 We like to implement UI that displays posts that from API and allow to send new. 
-Our UI need a RecyclerView for displying the posts, a button and a text field so a user is able to post to the server.
+Our UI need a RecyclerView for displaying the posts, a button, and a text field so a user is able to post to the server.
 
 At the starting point, you have two classes that represent API responses:
 
@@ -68,7 +68,7 @@ interface AuthorizationDao {
 
 ```
 
-In this case this will be just a mock:
+In this case, this will be just a mock:
 
 ```kotlin
 class LoginDao : AuthorizationDao {
@@ -114,7 +114,7 @@ class PostsDaos(val computationScheduler: Scheduler,
 }
 ```
 
-`PostsDao` needs `val authorizedDao: AuthorizedDao` because posts are different for different authorized users and we don't want to return other user posts when user re-login to different account.
+`PostsDao` needs `val authorizedDao: AuthorizedDao` because posts are different for different authorized users and we don't want to return other user posts when user re-login to a different account.
 Cache is used so the same instance always will be returned for the same authorized user. We could use more sophisticated cache but HashMap is good enough.
 
 Now you implement receive posts in your `PostsDao`:
@@ -132,8 +132,8 @@ val posts: Observable<Either<DefaultError, List<Post>>> =
 ```
 
 * Now you request new authorization token (*1*) and request API (*2*).
-* You need to use request api over different thread.
-* You want to handle errors in nice way (*4, 5*).
+* You need to use request API over the different thread.
+* You want to handle errors in a nice way (*4, 5*).
 * You want to convert your `Single<>` to `Observable<>` (*6*).
 * And you also want to cache results (*7*).
 
@@ -150,9 +150,9 @@ fun createPost(post: Post): Single<Either<DefaultError, Unit>> =
     .flatMap { response -> Single.fromCallable { refreshSubject.onNext(Unit) }.map { response } } // 6
 ```
 
-* Points from *1-6* are the same as in fetch example.
-* But now you don't convert to `Observable` because this is an action that will create post and give one result.
-* You also don't cache result because invoking `createPost(Post)` should always create new post.
+* Points from *1-6* are the same as in the fetch example.
+* But now you don't convert to `Observable` because this is an action that will create a post and give one result.
+* You also don't cache result because invoking `createPost(Post)` should always create a post.
 * But you need to inform posts that something has changed.
 
 Now you adjust `posts`:
@@ -174,11 +174,11 @@ val posts: Observable<Either<DefaultError, List<Post>>> =
 * Instead of caching all results we want to use only last one (`replay(1).refCount()`) (*6.1, 6.2*)
  
 Now your `PostsDao` is super cool. If post will be added, list of posts is automatically refreshed.
-Your buissnes logic is hidden inside of `PostsDao`.
+Your business logic is hidden inside of `PostsDao`.
 
 # Presenters
 
-Presenters and UI are not parts of this tutorial but if you would like to see how to use code that you just written see the full code here:
+Presenters and UI are not parts of this tutorial but if you would like to see how to use code that you just wrote see the full code here:
 [Presenters and UI implementation](https://github.com/jacek-marchwicki/example-rx-and-kotlin-and-either/blob/master/app/src/main/java/com/jacekmarchwicki/examplerxextensions/MainActivity.kt)
 
 # So what we can do better
@@ -193,9 +193,9 @@ val x = Single.just(Unit)
   .onErrorReturn { Either.left(ApiError as DefaultError) }
 ```
 
-* It requires type definition and casting
-* It's very common in each api request
-* even if it's actually just a changing error to either it requires two operations
+* It requires type definition and casting.
+* It's very common for API requests.
+* If it's actually just a changing error to either it requires two operations.
 
 So lets define useful extension function:
 
@@ -220,7 +220,7 @@ fun <T> Single<Try<T>>.toEither(): Single<Either<Throwable, T>> = map { it.toEit
 fun <L, R> Single<R>.toEither(func: (Throwable) -> L): Single<Either<L, R>> = toTry().toEither().map { it.left().map(func) }
 ```
 
-Now you can implement API error handling in universal super cool way:
+Now you can implement API error handling in a universal super cool way:
 
 ```kotlin
 val x = Single.just(Unit)
