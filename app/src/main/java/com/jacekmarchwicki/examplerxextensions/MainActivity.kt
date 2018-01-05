@@ -156,7 +156,12 @@ class MainPresenter(postsDaos: PostsDaos,
     }
 }
 interface DefaultError
+sealed class ApiError : DefaultError {
+    object NoNetwork: ApiError()
+    object Unknown: ApiError()
+}
 object NotYetLoadedError : DefaultError
+
 
 data class Post(val id: String, val title: String)
 
@@ -175,18 +180,6 @@ class PostsDaos(val networkScheduler: Scheduler,
 
     inner class PostsDao(private val authorizedDao: AuthorizedDao) {
         private val refreshSubject = PublishSubject.create<Unit>()
-
-        /**
-         * Only used as example how to implement without refreshing
-         */
-        val postsSimple: Observable<Either<DefaultError, List<Post>>> =
-                authorizedDao.callWithAuthTokenSingle { authorization ->
-                    service.getPosts(authorization)
-                            .subscribeOn(networkScheduler)
-                            .handleApiErrors()
-                }
-                .toObservable()
-                .cache()
 
         val posts: Observable<Either<DefaultError, List<Post>>> =
                 authorizedDao.callWithAuthTokenSingle { authorization ->
@@ -255,10 +248,6 @@ fun <T> Single<T>.toTry(): Single<Try<T>> =
 fun <T> Single<Try<T>>.toEither(): Single<Either<Throwable, T>> = map { it.toEither() }
 fun <L, R> Single<R>.toEither(func: (Throwable) -> L): Single<Either<L, R>> = toTry().toEither().map { it.left().map(func) }
 
-sealed class ApiError : DefaultError {
-    object NoNetwork: ApiError()
-    object Unknown: ApiError()
-}
 private val handleErrors: (Throwable) -> DefaultError = {
     when (it) {
         is IOException -> ApiError.NoNetwork
