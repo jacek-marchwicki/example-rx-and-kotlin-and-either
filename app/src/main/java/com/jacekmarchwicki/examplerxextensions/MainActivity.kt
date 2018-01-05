@@ -19,6 +19,7 @@ import kotlinx.android.synthetic.main.main_activity_post_item.view.*
 import org.funktionale.either.Either
 import org.funktionale.option.Option
 import org.funktionale.option.getOrElse
+import org.funktionale.tries.Try
 import rx.Observable
 import rx.Scheduler
 import rx.Single
@@ -29,11 +30,12 @@ import rx.schedulers.Schedulers
 import rx.subjects.PublishSubject
 import rx.subscriptions.SerialSubscription
 import rx.subscriptions.Subscriptions
+import java.io.IOException
 import java.util.*
 import java.util.concurrent.TimeUnit
 
 class MainApplication : Application() {
-    val postsDao: PostsDaos by lazy {PostsDaos(Schedulers.computation(), PostsService())}
+    val postsDao: PostsDaos by lazy {PostsDaos(Schedulers.io(), PostsService())}
     val authorizationDao: AuthorizationDao by lazy {LoginDao()}
 }
 
@@ -153,13 +155,12 @@ class MainPresenter(postsDaos: PostsDaos,
 
     }
 }
-
 interface DefaultError
-object ApiError : DefaultError
 object NotYetLoadedError : DefaultError
 
 data class Post(val id: String, val title: String)
 
+/* Parameters will be used in real implementation */ @Suppress("UNUSED_PARAMETER")
 class PostsService {
     fun getPosts(authorization: String): Single<List<Post>> = Single.just(listOf(Post("${authorization}id1", "test")))
             .delay(2, TimeUnit.SECONDS)
@@ -167,33 +168,41 @@ class PostsService {
     fun addPost(authorization: String, post: Post): Single<Unit> = Single.just(Unit).delay(2, TimeUnit.SECONDS)
 }
 
-class PostsDaos(val computationScheduler: Scheduler,
+class PostsDaos(val networkScheduler: Scheduler,
                 val service: PostsService) {
     private val cache = HashMap<AuthorizedDao, PostsDao>()
     fun getDao(key: AuthorizedDao): PostsDao = cache.getOrPut(key, { PostsDao(key) })
 
-    inner class PostsDao(val authorizedDao: AuthorizedDao) {
+    inner class PostsDao(private val authorizedDao: AuthorizedDao) {
         private val refreshSubject = PublishSubject.create<Unit>()
 
+        /**
+         * Only used as example how to implement without refreshing
+         */
+        val postsSimple: Observable<Either<DefaultError, List<Post>>> =
+                authorizedDao.callWithAuthTokenSingle { authorization ->
+                    service.getPosts(authorization)
+                            .subscribeOn(networkScheduler)
+                            .handleApiErrors()
+                }
+                .toObservable()
+                .cache()
+
         val posts: Observable<Either<DefaultError, List<Post>>> =
-                refreshSubject.startWith(Unit)
-                        .flatMapSingle {
-                            authorizedDao.callWithAuthTokenSingle { authorization ->
-                                service.getPosts(authorization)
-                                        .subscribeOn(computationScheduler)
-                                        .map { Either.right(it) as Either<DefaultError, List<Post>> }
-                                        .onErrorReturn { Either.left(ApiError as DefaultError) }
-                            }
-                        }
+                authorizedDao.callWithAuthTokenSingle { authorization ->
+                    service.getPosts(authorization)
+                            .subscribeOn(networkScheduler)
+                            .handleApiErrors()
+                }
+                        .refreshWhen(refreshSubject)
                         .replay(1)
                         .refCount()
 
         fun createPost(post: Post): Single<Either<DefaultError, Unit>> =
                 authorizedDao.callWithAuthTokenSingle { authorization ->
                     service.addPost(authorization, post)
-                            .subscribeOn(computationScheduler)
-                            .map { Either.right(it) as Either<DefaultError, Unit> }
-                            .onErrorReturn { Either.left(ApiError as DefaultError) }
+                            .subscribeOn(networkScheduler)
+                            .handleApiErrors()
                 }
                         // Force refresh posts
                         .flatMap { response -> Single.fromCallable { refreshSubject.onNext(Unit) }.map { response } }
@@ -205,21 +214,56 @@ class PostsDaos(val computationScheduler: Scheduler,
 
 class LoginDao : AuthorizationDao {
 
-    override val authorizedDaoObservable: Observable<Either<DefaultError, AuthorizedDao>>
-            = Observable.just(Either.right(LoggedInDao("me")) as Either<DefaultError, AuthorizedDao>)
+    // always return logged user "me"
+    override val authorizedDaoObservable: Observable<Either<DefaultError, AuthorizedDao>> = Single.just(LoggedInDao("me") as AuthorizedDao)
+            .handleApiErrors()
+            .toObservable()
             .mergeWith(Observable.never())
 
-    class LoggedInDao(override val userId: String) : AuthorizedDao {
+    data class LoggedInDao(override val userId: String) : AuthorizedDao {
+        // always call request with fake token
         override fun <T> callWithAuthTokenSingle(request: (String) -> Single<Either<DefaultError, T>>): Single<Either<DefaultError, T>> =
-                request("fake token")
+                request("$userId fake token")
     }
 }
 
 interface AuthorizedDao {
     val userId: String
-    fun <T> callWithAuthTokenSingle(request: (String) -> Single<Either<DefaultError, T>>): Single<Either<DefaultError, T>>
+
+    /**
+     * Allows executing requests with authorization tokens
+     */
+    fun <T> callWithAuthTokenSingle(request: (authorization: String) -> Single<Either<DefaultError, T>>): Single<Either<DefaultError, T>>
 }
 
 interface AuthorizationDao {
+    /**
+     * Returns current logged user or error
+     */
     val authorizedDaoObservable: Observable<Either<DefaultError, AuthorizedDao>>
 }
+
+fun <T> Single<T>.refreshWhen(refreshObservable: Observable<Unit>): Observable<T> =
+        refreshObservable
+                .startWith(Unit)
+                .onBackpressureLatest()
+                .flatMapSingle({ this }, false, 1)
+
+fun <T> Single<T>.toTry(): Single<Try<T>> =
+        map { Try.Success(it) as Try<T> }
+                .onErrorReturn { Try.Failure(it) }
+fun <T> Single<Try<T>>.toEither(): Single<Either<Throwable, T>> = map { it.toEither() }
+fun <L, R> Single<R>.toEither(func: (Throwable) -> L): Single<Either<L, R>> = toTry().toEither().map { it.left().map(func) }
+
+sealed class ApiError : DefaultError {
+    object NoNetwork: ApiError()
+    object Unknown: ApiError()
+}
+private val handleErrors: (Throwable) -> DefaultError = {
+    when (it) {
+        is IOException -> ApiError.NoNetwork
+        else -> ApiError.Unknown
+    }
+}
+
+fun <T> Single<T>.handleApiErrors():Single<Either<DefaultError, T>> = toEither(handleErrors)
