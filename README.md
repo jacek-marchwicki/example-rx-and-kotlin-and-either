@@ -1,5 +1,9 @@
 # Extensions functions for RxJava (article draft)
 
+# Article TODO:
+* Check spelling
+* Better line brakes
+
 This introduction of some patterns that can be helpful during the implementation of Android applications that operate on some structured data especially downloaded from some kind of API.
 
 **Warning: Lot of code alert.** Because I'm apps developer and probably you also, I will show a lot of code.
