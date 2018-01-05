@@ -274,6 +274,12 @@ val posts: Observable<Either<DefaultError, List<Post>>> =
     .refCount()
 ```
 
+# Summary
+
+1. Extensions functions in Kotlin can make your code more readable.
+2. Writing business logic in DAO's (Data Access Objects) makes your code easier to understand.
+3. Either's are better than throwable for handling errors.
+
 # What's more
 
 If you would like to see how to test look here: [Using schedulers while testing your code](https://medium.com/@JMarchwicki/using-schedulers-while-testing-your-code-cd924940cc04)
