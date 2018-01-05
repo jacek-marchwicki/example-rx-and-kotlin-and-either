@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">ExampleRxExtensions</string>
+    <string name="main_activity_send_button">Send</string>
+</resources>
