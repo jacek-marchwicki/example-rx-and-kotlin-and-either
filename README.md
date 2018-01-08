@@ -2,7 +2,6 @@
 
 # Article TODO:
 * Check spelling
-* Better line brakes
 
 This introduction of some patterns that can be helpful during the implementation of Android applications that operate on some structured data especially downloaded from some kind of API.
 
@@ -44,10 +43,12 @@ You have also some service, probably written using [retrofit](http://square.gith
 
 ```kotlin
 class PostsService {
-    fun getPosts(authorization: String): Single<List<Post>> = Single.just(listOf(Post("${authorization}id1", "test")))
+    fun getPosts(authorization: String): Single<List<Post>> = 
+        Single.just(listOf(Post("${authorization}id1", "test")))
             .delay(2, TimeUnit.SECONDS)
 
-    fun addPost(authorization: String, post: Post): Single<Unit> = Single.just(Unit).delay(2, TimeUnit.SECONDS)
+    fun addPost(authorization: String, post: Post): Single<Unit> = 
+        Single.just(Unit).delay(2, TimeUnit.SECONDS)
 }
 ```
 
@@ -60,7 +61,9 @@ interface AuthorizedDao {
     /**
      * Allows executing requests with authorization tokens
      */
-    fun <T> callWithAuthTokenSingle(request: (authorization: String) -> Single<Either<DefaultError, T>>): Single<Either<DefaultError, T>>
+    fun <T> callWithAuthTokenSingle(
+      request: (authorization: String) -> Single<Either<DefaultError, T>>
+      ): Single<Either<DefaultError, T>>
 }
 
 interface AuthorizationDao {
@@ -78,13 +81,14 @@ In this case, this will be just a mock:
 class LoginDao : AuthorizationDao {
 
     // always return logged user "me"
-    override val authorizedDaoObservable: Observable<Either<DefaultError, AuthorizedDao>>
-            = Observable.just(Either.right(LoggedInDao("me")) as Either<DefaultError, AuthorizedDao>)
+    override val authorizedDaoObservable: Observable<Either<DefaultError, AuthorizedDao>> = 
+        Observable.just(Either.right(LoggedInDao("me")) as Either<DefaultError, AuthorizedDao>)
             .mergeWith(Observable.never()).cache()
 
     data class LoggedInDao(override val userId: String) : AuthorizedDao {
         // always call request with fake token
-        override fun <T> callWithAuthTokenSingle(request: (String) -> Single<Either<DefaultError, T>>): Single<Either<DefaultError, T>> =
+        override fun <T> callWithAuthTokenSingle(
+          request: (String) -> Single<Either<DefaultError, T>>): Single<Either<DefaultError, T>> =
                 request("$userId fake token")
     }
 }
@@ -111,8 +115,10 @@ class PostsDaos(val computationScheduler: Scheduler,
     fun getDao(key: AuthorizedDao): PostsDao = cache.getOrPut(key, { PostsDao(key) })
 
     inner class PostsDao(private val authorizedDao: AuthorizedDao) {
-        val posts: Observable<Either<DefaultError, List<Post>>> = Observable.error(NotImplementedError())
-        fun createPost(post: Post): Single<Either<DefaultError, Unit>> = Single.error(NotImplementedError())
+        val posts: Observable<Either<DefaultError, List<Post>>> = 
+          Observable.error(NotImplementedError())
+        fun createPost(post: Post): Single<Either<DefaultError, Unit>> = 
+          Single.error(NotImplementedError())
     }
 
 }
@@ -151,7 +157,10 @@ fun createPost(post: Post): Single<Either<DefaultError, Unit>> =
                 .map { Either.right(it) as Either<DefaultError, Unit> } // 4
                 .onErrorReturn { Either.left(ApiError as DefaultError) } // 5
     }
-    .flatMap { response -> Single.fromCallable { refreshSubject.onNext(Unit) }.map { response } } // 6
+    .flatMap { response -> 
+      Single.fromCallable { refreshSubject.onNext(Unit) }
+      .map { response } 
+    } // 6
 ```
 
 * Points from *1-6* are the same as in the fetch example.
@@ -219,9 +228,15 @@ val x = Single.just(Unit)
 But implementation of our extension function could more universal:
 
 ```kotlin
-fun <T> Single<T>.toTry(): Single<Try<T>> = map { Try.Success(it) as Try<T> } .onErrorReturn { Try.Failure(it) }
-fun <T> Single<Try<T>>.toEither(): Single<Either<Throwable, T>> = map { it.toEither() }
-fun <L, R> Single<R>.toEither(func: (Throwable) -> L): Single<Either<L, R>> = toTry().toEither().map { it.left().map(func) }
+fun <T> Single<T>.toTry(): Single<Try<T>> = 
+  map { Try.Success(it) as Try<T> } 
+  .onErrorReturn { Try.Failure(it) }
+fun <T> Single<Try<T>>.toEither(): Single<Either<Throwable, T>> = 
+  map { it.toEither() }
+fun <L, R> Single<R>.toEither(func: (Throwable) -> L): Single<Either<L, R>> = 
+  toTry()
+  .toEither()
+  .map { it.left().map(func) }
 ```
 
 Now you can implement API error handling in a universal super cool way:
@@ -241,7 +256,8 @@ private val handleErrors: (Throwable) -> DefaultError = {
     }
 }
 
-fun <T> Single<T>.handleApiErrors():Single<Either<DefaultError, T>> = toEither(handleErrors)
+fun <T> Single<T>.handleApiErrors():Single<Either<DefaultError, T>> = 
+  toEither(handleErrors)
 ```
 
 ## Better refreshing
