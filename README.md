@@ -1,11 +1,11 @@
-# Extensions functions for RxJava
+# Kotlin and RxJava with extensions functions
 
 This is an introduction to some patterns that can be helpful during the implementation of Android applications that operate on any structured data especially downloaded from some API.
 
 **Warning: Lot of code alert.** Because I'm an Android developer and probably you also, I will show a lot of code.
 
 # TL;DR;
-[Full code is available here](app/src/main/java/com/jacekmarchwicki/examplerxextensions/MainActivity.kt)
+[Full code is available here](https://github.com/jacek-marchwicki/example-rx-and-kotlin-and-either/blob/master/app/src/main/java/com/jacekmarchwicki/examplerxextensions/MainActivity.kt)
 
 # Used libraries
 
