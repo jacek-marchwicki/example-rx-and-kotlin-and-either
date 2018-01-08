@@ -1,18 +1,15 @@
-# Extensions functions for RxJava (article draft)
+# Extensions functions for RxJava
 
-# Article TODO:
-* Check spelling
+This is an introduction to some patterns that can be helpful during the implementation of Android applications that operate on any structured data especially downloaded from some API.
 
-This introduction of some patterns that can be helpful during the implementation of Android applications that operate on some structured data especially downloaded from some kind of API.
-
-**Warning: Lot of code alert.** Because I'm apps developer and probably you also, I will show a lot of code.
+**Warning: Lot of code alert.** Because I'm an Android developer and probably you also, I will show a lot of code.
 
 # TL;DR;
-[Full code is available here](https://github.com/jacek-marchwicki/example-rx-and-kotlin-and-either/blob/master/app/src/main/java/com/jacekmarchwicki/examplerxextensions/MainActivity.kt)
+[Full code is available here](app/src/main/java/com/jacekmarchwicki/examplerxextensions/MainActivity.kt)
 
 # Used libraries
 
-**TIP:** We use RxJava 1.x but almost the same code can be used with RxJava 2.x
+**TIP:** In the example I use RxJava 1.x but almost the same code can be used with RxJava 2.x
 
 ```groovy
 implementation "io.reactivex:rxjava:1.3.0"
@@ -22,9 +19,9 @@ implementation "com.jakewharton.rxbinding:rxbinding-kotlin:1.0.1"
 implementation 'com.github.jacek-marchwicki.recyclerview-changes-detector:universal-adapter:1.0.2'
 ```
 
-# Let’s start with some example
+# Let’s start with an example
 
-We like to implement UI that displays posts that from API and allow to send new. 
+We like to implement UI that displays posts from API and allows sending new. 
 Our UI need a RecyclerView for displaying the posts, a button, and a text field so a user is able to post to the server.
 
 At the starting point, you have two classes that represent API responses:
@@ -33,13 +30,13 @@ At the starting point, you have two classes that represent API responses:
 * `Post` — represents post that needs to be added to the server.
 
 ```kotlin
-interface DefaultError
-object ApiError : DefaultError
+interface DefaultError // General errors class
+object ApiError : DefaultError // Api errors class
 
 data class Post(val id: String, val title: String)
 ```
 
-You have also some service, probably written using [retrofit](http://square.github.io/retrofit/):
+You have also some service, probably written using [retrofit](http://square.github.io/retrofit/). We will mock it:
 
 ```kotlin
 class PostsService {
@@ -52,7 +49,7 @@ class PostsService {
 }
 ```
 
-I expect that you have some UI and model (Dao - Data Access Object) that will provide authorization.
+I expect that you already have some UI and model (Dao - Data Access Object) that will provide authorization.
 
 ```kotlin
 interface AuthorizedDao {
@@ -262,7 +259,7 @@ fun <T> Single<T>.handleApiErrors():Single<Either<DefaultError, T>> =
 
 ## Better refreshing
 
-Imho the code:
+IMHO the code:
 
 ```kotlin
 val x = refreshSubject.startWith(Unit)
@@ -272,7 +269,7 @@ val x = refreshSubject.startWith(Unit)
     }, false, 1)
 ```
 
-it's pretty hard to understand, if it's hard to understand your code you need to rewrite it:
+it's pretty hard to understand. If a code is hard to understand, you need to rewrite it:
 
 ```kotlin
 fun <T> Single<T>.refreshWhen(refreshObservable: Observable<Unit>): Observable<T> = 
@@ -296,9 +293,11 @@ val posts: Observable<Either<DefaultError, List<Post>>> =
 
 # Summary
 
-1. Extensions functions in Kotlin can make your code more readable.
-2. Writing business logic in DAO's (Data Access Objects) makes your code easier to understand.
-3. Either's are better than throwable for handling errors.
+What you learned:
+1. Extensions functions in Kotlin can make your code more readable. You also do not have to constantly repeat writing the same code again.
+2. Writing business logic in DAO's (Data Access Objects) makes your code easier to understand. Logic is separated from views.
+3. Either's are better than throwable's for handling errors.
+4. Good code model allows of agile modification of code without touching views.
 
 # What's more
 
