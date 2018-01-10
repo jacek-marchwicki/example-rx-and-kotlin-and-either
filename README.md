@@ -1,8 +1,8 @@
 # Kotlin and RxJava with extensions functions
 
-This is an introduction to some patterns that can be helpful during the implementation of Android applications that operate on any structured data especially downloaded from some API.
+This is an introduction to some patterns that can be helpful during the implementation of Android applications that operate on any structured data, especially downloaded from APIs.
 
-**Warning: Lot of code alert.** Because I'm an Android developer and probably you also, I will show a lot of code.
+**Warning: Lot of code.** Since its rather a technical article and I am an Android dev (probably as you are), there will be a lot of code examples.
 
 # TL;DR;
 [Full code is available here](https://github.com/jacek-marchwicki/example-rx-and-kotlin-and-either/blob/master/app/src/main/java/com/jacekmarchwicki/examplerxextensions/MainActivity.kt)
@@ -21,10 +21,10 @@ implementation 'com.github.jacek-marchwicki.recyclerview-changes-detector:univer
 
 # Let’s start with an example
 
-We like to implement UI that displays posts from API and allows sending new. 
-Our UI need a RecyclerView for displaying the posts, a button, and a text field so a user is able to post to the server.
+We would like to implement UI that displays posts from API and allows sending new ones. 
+Our UI need a RecyclerView for displaying the posts, a button, and a text field, so a user is able to post to the server.
 
-At the starting point, you have two classes that represent API responses:
+Firstly, you have two classes that represent API responses:
 
 * `ApiError` — represents some errors from API,
 * `Post` — represents post that needs to be added to the server.
@@ -36,7 +36,8 @@ object ApiError : DefaultError // Api errors class
 data class Post(val id: String, val title: String)
 ```
 
-You have also some service, probably written using [retrofit](http://square.github.io/retrofit/). We will mock it:
+????? You probably have some services written with retrofit. We will mock it:
+????? You have also some service, probably written using [retrofit](http://square.github.io/retrofit/). We will mock it:
 
 ```kotlin
 class PostsService {
@@ -101,9 +102,9 @@ class MainApplication : Application() {
 }
 ```
 
-# Start implementation
+# Start the implementation
 
-You create some base class for receiving posts and for sending new.
+You create some base class for receiving posts and for sending new ones.
 
 ```kotlin
 class PostsDaos(val computationScheduler: Scheduler,
@@ -122,9 +123,9 @@ class PostsDaos(val computationScheduler: Scheduler,
 ```
 
 `PostsDao` needs `val authorizedDao: AuthorizedDao` because posts are different for different authorized users and we don't want to return other user posts when user re-login to a different account.
-Cache is used so the same instance always will be returned for the same authorized user. We could use more sophisticated cache but HashMap is good enough.
+Cache is used so the same instance will always return the same authorized user. We could use more sophisticated cache but HashMap is good enough.
 
-Now you implement receive posts in your `PostsDao`:
+Now you implement receiving posts in your `PostsDao`:
 
 ```kotlin
 val posts: Observable<Either<DefaultError, List<Post>>> =
@@ -179,7 +180,7 @@ val posts: Observable<Either<DefaultError, List<Post>>> =
 ```
 
 * First (*0.1*) we will wait for changes from refreshSubject and start with some default value that will execute our request.
-* We ensure if multiple refreshes request will occur we will ignore them (*0.2*).
+* We make sure we ignore multiple refreshes requests when they occur (*0.2*).
 * Each request for downloading data we will `flatMapSingle` (*0.3*) with our API call. We don't want to use more than one concurrent API call.
 * Instead of caching all results we want to use only last one (`replay(1).refCount()`) (*6.1, 6.2*)
  
@@ -205,9 +206,9 @@ val x = Single.just(Unit)
 
 * It requires type definition and casting.
 * It's very common for API requests.
-* If it's actually just a changing error to either it requires two operations.
+* It requires two operations but it's a single operation (just a changing error to either).
 
-So lets define useful extension function:
+So lets define useful extensions function:
 
 ```kotlin
 fun <L, R> Single<R>.toEither(func: (Throwable) -> L): Single<Either<L, R>> =
@@ -222,7 +223,7 @@ val x = Single.just(Unit)
   .toEither { ApiError as DefaultError }
 ```
 
-But implementation of our extension function could more universal:
+But implementation of our extension function could be more universal:
 
 ```kotlin
 fun <T> Single<T>.toTry(): Single<Try<T>> = 
@@ -269,7 +270,7 @@ val x = refreshSubject.startWith(Unit)
     }, false, 1)
 ```
 
-it's pretty hard to understand. If a code is hard to understand, you need to rewrite it:
+is pretty hard to understand. If the code is hard to understand, you need to rewrite it:
 
 ```kotlin
 fun <T> Single<T>.refreshWhen(refreshObservable: Observable<Unit>): Observable<T> = 
@@ -294,10 +295,10 @@ val posts: Observable<Either<DefaultError, List<Post>>> =
 # Summary
 
 What you learned:
-1. Extensions functions in Kotlin can make your code more readable. You also do not have to constantly repeat writing the same code again.
+1. Extensions functions in Kotlin can make your code more readable. You also do not have to write the same code constantly.
 2. Writing business logic in DAO's (Data Access Objects) makes your code easier to understand. Logic is separated from views.
 3. Either's are better than throwable's for handling errors.
-4. Good code model allows of agile modification of code without touching views.
+4. Good code model allows agile modification of it without touching views.
 
 # What's more
 
