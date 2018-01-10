@@ -36,8 +36,7 @@ object ApiError : DefaultError // Api errors class
 data class Post(val id: String, val title: String)
 ```
 
-????? You probably have some services written with retrofit. We will mock it:
-????? You have also some service, probably written using [retrofit](http://square.github.io/retrofit/). We will mock it:
+You have also some service, probably written using [retrofit](http://square.github.io/retrofit/). We will mock it:
 
 ```kotlin
 class PostsService {
