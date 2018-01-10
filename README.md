@@ -145,7 +145,7 @@ val posts: Observable<Either<DefaultError, List<Post>>> =
 * You want to convert your `Single<>` to `Observable<>` (*6*).
 * And you also want to cache results (*7*).
 
-Now you need implement send post in your `PostsDao`:
+Now you need implement sending post in your `PostsDao`:
 
 ```kotlin
 fun createPost(post: Post): Single<Either<DefaultError, Unit>> =
@@ -164,7 +164,7 @@ fun createPost(post: Post): Single<Either<DefaultError, Unit>> =
 * Points from *1-6* are the same as in the fetch example.
 * But now you don't convert to `Observable` because this is an action that will create a post and give one result.
 * You also don't cache result because invoking `createPost(Post)` should always create a post.
-* But you need to inform posts that something has changed.
+* But you need to inform posts that something has changed (*6*).
 
 Now you adjust `posts`:
 
@@ -184,7 +184,7 @@ val posts: Observable<Either<DefaultError, List<Post>>> =
 * Each request for downloading data we will `flatMapSingle` (*0.3*) with our API call. We don't want to use more than one concurrent API call.
 * Instead of caching all results we want to use only last one (`replay(1).refCount()`) (*6.1, 6.2*)
  
-Now your `PostsDao` is super cool. If post will be added, list of posts is automatically refreshed.
+Now your `PostsDao` is super cool. When post will be added, list of posts will be automatically refreshed.
 Your business logic is hidden inside of `PostsDao`.
 
 # Presenters
@@ -196,7 +196,7 @@ Presenters and UI are not parts of this tutorial but if you would like to see ho
 
 ## Better error handling
 
-In case of my perspective the ugliest code is here:
+In my opinion the ugliest code is here:
 
 ```kotlin
 val x = Single.just(Unit)
