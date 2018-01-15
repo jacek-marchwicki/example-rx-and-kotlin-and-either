@@ -5,7 +5,7 @@ This is an introduction to some patterns that can be helpful during the implemen
 **Warning: Lot of code.** Since its rather a technical article and I am an Android dev (probably as you are), there will be a lot of code examples.
 
 # TL;DR;
-[Full code is available here](../app/src/main/java/com/jacekmarchwicki/examplerxextensions/MainActivity.kt)
+[Full code is available here](../examples/kotlin-and-rxjava-with-extensions-functions/src/main/java/com/jacekmarchwicki/examplerxextensions/MainActivity.kt)
 
 # Used libraries
 
@@ -189,7 +189,7 @@ Your business logic is hidden inside of `PostsDao`.
 # Presenters
 
 Presenters and UI are not parts of this tutorial but if you would like to see how to use code that you just wrote see the full code here:
-[Presenters and UI implementation](../app/src/main/java/com/jacekmarchwicki/examplerxextensions/MainActivity.kt)
+[Presenters and UI implementation](../examples/kotlin-and-rxjava-with-extensions-functions/src/main/java/com/jacekmarchwicki/examplerxextensions/MainActivity.kt)
 
 # So what we can do better
 

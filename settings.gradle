@@ -1,1 +1,1 @@
-include ':app'
+include ':examples:kotlin-and-rxjava-with-extensions-functions'
