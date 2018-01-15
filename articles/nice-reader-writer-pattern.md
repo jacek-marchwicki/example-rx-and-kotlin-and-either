@@ -92,7 +92,7 @@ fun `if data is written and read in one transaction, data is filled`() {
         list
     }
 
-    assertEquals(listOf("something"), dataRead)
+    assertEquals(listOf("something", "something else"), dataRead)
 }
 ```
 
@@ -114,6 +114,9 @@ class NewDatabase {
      * Interface that will allow reading and writing
      */
     interface Write : Read {
+        /*
+         * In kotlin we can override val with var so writes will be allowed
+         */
         override var list: List<String>
         fun addItem(item: String)
     }

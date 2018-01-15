@@ -17,6 +17,9 @@ class NewDatabase {
      * Interface that will allow reading and writing
      */
     interface Write : Read {
+        /*
+         * In kotlin we can override val with var so writes will be allowed
+         */
         override var list: List<String>
         fun addItem(item: String)
     }
