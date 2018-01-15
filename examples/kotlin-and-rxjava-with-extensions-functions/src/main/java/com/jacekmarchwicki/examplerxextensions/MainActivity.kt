@@ -39,7 +39,7 @@ class MainApplication : Application() {
     val authorizationDao: AuthorizationDao by lazy {LoginDao()}
 }
 
-class RxJavaExtensionsActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity() {
 
     private val serialSubscription = SerialSubscription()
 
