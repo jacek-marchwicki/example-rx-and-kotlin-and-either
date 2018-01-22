@@ -303,11 +303,11 @@ What you learned:
 
 If you would like to see how to test look here: [Using schedulers while testing your code](using-schedulers-while-testing-your-code.md)
 
-# Corrected by
+# Authors
+
+Author:
+* Jacek Marchwicki
 
 Corrected by:
 * Marcin Adamczewski
 * Andrzej Wyduba
-
-Author:
-* Jacek Marchwicki
