@@ -280,7 +280,7 @@ private fun createPresenter() = PostsPresenter(postsDao, clickObservable, messag
 You will no longer need to invoke `uiScheduler.triggerActions()` this will be done automatically.
 
 
-## Conclustions
+## Conclusions
 
 1. Don't care about threading changes in your tests if you don't want to check threading,
 2. Don't use Schedulers.immediate() so your tests will be quicker and more reliable,
@@ -298,3 +298,7 @@ testCompile "junit:junit:4.11"
 testCompile 'org.mockito:mockito-core:2.13.0'
 testCompile "com.nhaarman:mockito-kotlin-kt1.1:1.5.0"
 ```
+
+# Authors
+Authors:
+* Jacek Marchwicki
