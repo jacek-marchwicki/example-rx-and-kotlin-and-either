@@ -16,7 +16,7 @@ Your app is an e-mail application, it will have a list of emails and some fields
 
 Because everyone did the job very well implementing features but forgot about error handling, there are possible situations that might happen:
 
-1. QA tester reject task with a comment "I clicked on send and nothing had happened". 
+1. QA tester rejects task with a comment "I clicked on send and nothing had happened". 
    Your testing team is very good, so tester will also attach video and applications logs.
 2. You sent application to product owner and he will say: "I just get a version without sending e-mails implemented"
 3. Application is in store and some user said that "I can't click on send button"
