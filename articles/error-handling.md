@@ -1,4 +1,4 @@
-# Errors... eh those errors
+# Errors... oh... those errors
 
 In my opinion, good error handling is one of the most important feature of the application.
 But most people in development process ignore them:
