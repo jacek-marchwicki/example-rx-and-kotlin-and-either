@@ -1,5 +1,7 @@
 # Errors... oh... those errors
 
+![The man fell into the chewing gum](error-handling/cover.jpg)
+
 In my opinion, good error handling is one of the most important feature of the application.
 But most people in development process ignore them:
 - Product owner focuses on happy path ignoring issues like missing internet connection.
