@@ -1,5 +1,7 @@
 # Nice reader/writer pattern
 
+![The man fell into the chewing gum](error-handling/cover.jpg)
+
 During the implementation of a chat app, I had to implement some kind of lock logic. 
 Usually, code with locking and unlocking become hard to read.
 If a business logic is complicated and you will add complicated locking, your code will become unreadable and unmaintainable.
