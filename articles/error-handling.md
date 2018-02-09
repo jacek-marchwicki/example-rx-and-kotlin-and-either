@@ -46,7 +46,7 @@ Problem solved! - But wait... good PM will continue to push the team to find a s
 So they will brainstorm to find what could happen:
 1. There were temporary problem with connection to database,
 2. Europe-America fiber had some temporary outage,
-3. There were deploy during that time,
+3. There was a deploy during that time,
 4. There is some ugly bug in production,
 5. Mobile app has some bug in version that is in the store,
 6. Device was connected to some network that didn't have internet access (like wifi without accepting network agreement),
@@ -64,7 +64,7 @@ This is a good starting point but doesn't help to understand which problem will 
 **Error handling should distinguish problems and help to resolve issues. Errors are not only for end user but also for developers.**
 
 1. If a user sees error, he should know what to do next.
-2. If a tester sees error, he should know how should fill issue.
+2. If a tester sees error, he should know how he should fill an issue.
 3. If a developer sees error, he should know how to fix it.
 
 Remember that production version of the application should also contain errors that are helpful for developer.
@@ -77,15 +77,15 @@ You also can send back to user quick response what issue has gone and you can pr
 So let's start with basic errors that we implement and why they are important:
 
 1. *Loading...* - most important feedback for a user that something is loading. 
-   The user needs that nothing need to worry about, just content is loading. 
+   The user needs to now that there is nothing to worry about, just content is loading. 
    If loading takes too much time, he might think about changing his network provider.
    During the loading, without indicator in the e-mail app, the user might think: "All my e-mail were deleted".
 2. *No internet, check your connection* - this is the second most important feedback for a user.
-   No internet is a common situation. In a train, plane, tunnel, underground station, or even some places in a flat.
+   No internet is a common situation. On the train, plane, tunnel, underground station, or even some places in a flat.
    Without this message, the user might think that app has broken or he doesn't know how to do things.
    Show to the user that it's not his or your fault. Show to him that he can fix this issue.
 3. *Your password is wrong*, *Title should be filled* - This is definitely frustrating to a user if he 
-   click send button and doesn't know why he can't send an e-mail - he just forgot to type recipients.
+   clicks send button and doesn't know why he can't send an e-mail - he just forgot to type recipients.
    People are imperfect and we tend to forget about something. So if the user will forget to fill something, you should help him.
 4. *Problem with network connection* - (optional but useful) 
    The app can distinguish missing network issues reported by device operating system from exceptions thrown while fetching data (like an unknown host, a connection is broken etc.).
@@ -99,9 +99,9 @@ So let's start with basic errors that we implement and why they are important:
    You will be happy during development because you will know that app didn't break, just a dev team doing a deployment.
 6. *Temporary server issue (500)* - Message should be displayed when you get some 5xx response code from a server.
    This issue should never happen but if it will appear your QA team will fill a ticket to backend team.
-   If a user will send you a screenshot of the bug you will know better what gone wrong.
-   Mobile team will be happy because they will not be disturb.
-   Backend team will be happy because will get a better understanding what issue might appear.
+   If a user will send you a screenshot of the bug you will know better what went wrong.
+   Mobile team will be happy because they will not be disturbed.
+   Backend team will be happy because they will get a better understanding what issues might appear.
 7. *Unknown application error (422)* - Message should be displayed when you get some 4xx response code from a server.
    This issue also should never happen but this time QA team will assign it to mobile team.
    Also this time you will better understand users problems.
@@ -112,17 +112,17 @@ So let's start with basic errors that we implement and why they are important:
 
 ## Errors persistence
 
-There is also one more thing. Apps tend to show toast/snack bars with errors.  It's better than none errors but toasts automatically passing away without solving an issue.
+There is also one more thing. Apps tend to show toast/snack bars with errors.  It's better than no errors but toasts automatically pass away without solving an issue.
 
 Lest show this by example:
-1. you open e-mail application;
-2. there is a problem with internet so e-mails couldn't load and snack bar is displayed;
-3. but you didn't saw snack bar because you talked with friend;
-4. snack bar disappear after 2 seconds;
-5. you look at your e-mail application and you see nothing and you become very angry because you think someone hacked to your e-mail account and deleted all of your emails.
+1. you open e-mail application,
+2. there is a problem with internet so e-mails couldn't load and snack bar is displayed,
+3. but you didn't saw snack bar because you talked with friend,
+4. snack bar disappeared after 2 seconds,
+5. you look at your e-mail application and you see nothing and you become very angry because you think someone hacked to your e-mail account and deleted all of your emails,
 6. also this screenshot of the screen will be sent to the development team.
 
-Wouldn't be much better to show this persistent error until emails will load with success? It would cause such problems.
+Wouldn't it be much better to show this persistent error until emails will load with success? It wouldn't cause such problems.
 
 But snack bars aren't so wrong. If you pull-to-refresh your emails snack bar will be much better than persistent error. If refreshing will fail you can still show old emails with a small snack bar that will not cover user content.
 
@@ -130,19 +130,21 @@ Also, a snack bar is pretty good for errors about liking, commenting, sending da
 
 ## Disturbing errors
 
-Errors shouldn't make a user work harder.
+Errors shouldn't make the user work harder.
 
 1. Content shouldn't be overlapped by errors.
 2. Snack bar shouldn't overlap action buttons.
 3. You shouldn't use errors as dialogs because they disrupt users workflow. Only in a very critical situation, you can show error as dialog.
 4. Errors shouldn't block other parts of UI. A user could use other app features during this outage time.
 
+//there is an inconsistency here, in #Errors persistence you start numbering with lowercase and `,` at the end while here you start uppercase with `.` at the end.
 
-# Summarise
 
-- Learn from others mistakes - do error handling NOW, not tomorrow.
+# Summary
+
+- Learn from others mistakes - do error handling TODAY, not tomorrow.
 - Catch as many errors as you can.
-- Better is week error handling than none.
+- Weak error handling is better than none.
 - Error handling should be as easy to implement as it can be to ALL features.
 - If you show an error message that will help your user resolve problem, you will not have his problems on your shoulders.
 - If you show an error message that will help QA team find a bug, you will spend less time on finding issues.
