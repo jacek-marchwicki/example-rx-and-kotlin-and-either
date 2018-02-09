@@ -132,12 +132,10 @@ Also, a snack bar is pretty good for errors about liking, commenting, sending da
 
 Errors shouldn't make the user work harder.
 
-1. Content shouldn't be overlapped by errors.
-2. Snack bar shouldn't overlap action buttons.
-3. You shouldn't use errors as dialogs because they disrupt users workflow. Only in a very critical situation, you can show error as dialog.
-4. Errors shouldn't block other parts of UI. A user could use other app features during this outage time.
-
-//there is an inconsistency here, in #Errors persistence you start numbering with lowercase and `,` at the end while here you start uppercase with `.` at the end.
+1. content shouldn't be overlapped by errors,
+2. snack bar shouldn't overlap action buttons,
+3. you shouldn't use errors as dialogs because they disrupt users workflow. Only in a very critical situation, you can show error as dialog,
+4. errors shouldn't block other parts of UI. A user could use other app features during this outage time.
 
 
 # Summary
