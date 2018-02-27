@@ -1,6 +1,6 @@
 # Errors... oh... those errors - coding
 
-![Woman blow a bubble with bubblegum](error-handling-coding/cover.jpg)
+![Woman blow a bubble with bubblegum. Source: https://unsplash.com/photos/66ufHo7498k](error-handling-coding/cover.jpg)
 
 Some time ago I wrote article about how important is to handle errors in nice way in article [Errors... oh... those errors](error-handling.md).
 I gave a promise that there will be continuation with coding examples. This is the continuation.
