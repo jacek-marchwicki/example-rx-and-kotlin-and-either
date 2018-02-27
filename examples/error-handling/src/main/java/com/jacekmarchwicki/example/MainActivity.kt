@@ -1,6 +1,5 @@
 package com.jacekmarchwicki.example
 
-import android.app.ProgressDialog.show
 import android.content.Context
 import android.net.ConnectivityManager
 import android.os.Bundle
@@ -28,7 +27,7 @@ class MainActivity : AppCompatActivity() {
                 ShowScreenErrorHandler(activity_main_content, { Option.Some(defaultErrorText(it)) })
         ))
         val snackbarErrorManager = ErrorManager<Errors>(listOf(
-                SnackbarErorHandler(activity_main_content, { Option.Some(defaultErrorText(it)) })
+                SnackbarErrorHandler(activity_main_content, { Option.Some(defaultErrorText(it)) })
         ))
 
         val errorManager = ErrorManager(listOf(
@@ -40,7 +39,7 @@ class MainActivity : AppCompatActivity() {
                 ProgressErrorHandler(activity_main_content),
                 ShowScreenErrorHandler(activity_main_content, {
                     Option.Some(when (it) {
-                        Errors.NotFound -> "Github items not found"
+                        Errors.NotFound -> "GitHub items not found"
                         else -> defaultErrorText(it)
                     })
                 })
@@ -121,7 +120,7 @@ class ProgressErrorHandler(private val view: FrameLayout) : ErrorHandler<Errors>
 
 }
 
-class SnackbarErorHandler<in T>(private val view: View, private val text: (T) -> Option<String>) : ErrorHandler<T> {
+class SnackbarErrorHandler<in T>(private val view: View, private val text: (T) -> Option<String>) : ErrorHandler<T> {
     override fun showError(error: T): Option<DismissError> = text(error)
             .map {
                 val snackbar = Snackbar.make(view, it, Snackbar.LENGTH_SHORT)
@@ -141,7 +140,11 @@ class ShowScreenErrorHandler<in T>(private val view: ViewGroup, private val text
             }
 }
 
+
 interface ErrorHandler<in T> {
+    /**
+     * Return value when error is handled
+     */
     fun showError(error: T): Option<DismissError>
 }
 
@@ -150,6 +153,9 @@ typealias DismissError = () -> Unit
 class ErrorManager<in T>(private val errorHandlers: List<ErrorHandler<T>>) {
     private var lastError: Option<DismissError> = Option.None
 
+    /**
+     * Present error to user
+     */
     fun showError(error: Option<T>) {
         lastError.let {
             if (it is Option.Some) {
