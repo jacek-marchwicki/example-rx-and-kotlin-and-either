@@ -1,9 +1,8 @@
 # Errors... oh... those errors - coding
 
-![Woman blow a bubble with bubblegum. Source: https://unsplash.com/photos/66ufHo7498k](error-handling-coding/cover2.jpg)
+![Woman blows a bubble with bubblegum. Source: https://unsplash.com/photos/66ufHo7498k](error-handling-coding/cover2.jpg)
 
-Some time ago I wrote article about how important is to handle errors in nice way in article [Errors... oh... those errors](error-handling.md).
-I gave a promise that there will be continuation with coding examples. This is the continuation.
+Some time ago I wrote an article about how important is to handle errors in a nice way. In the article [Errors... oh... those errors](error-handling.md) I gave a promise that there will be a continuation with coding examples. This is the continuation.
 
 Main objectives:
 - Almost `0 code` to use,
@@ -11,23 +10,22 @@ Main objectives:
 - Extendable.
 
 
-## TL;DR:
+# TL;DR:
 
 Full code of the example is available [here](../examples/error-handling/src/main/java/com/jacekmarchwicki/example/MainActivity.kt)
 
-## Idea
+# Idea
 
-The ida about errors are quite simple. They can appear in some time, and can be resolved in future. 
+The idea of errors is quite simple. They can appear in some time and can be resolved in future. 
 Sometimes they can be resolved without user interaction (like user device will reconnect to WiFi network automatically).
 
-So good way of thinking about errors is that they are some kind of temporary state of the application, 
-that you should show to a user.
+So good way of thinking about errors is that they are some kind of temporary state of the application, that you should be presented to a user.
 I think the word `state` is pretty important when we would like to implement error handling.
 
-## Testimony
+# Testimony
 
 This article is not about how you should make requests to your API, and how you should handle async
- calls so lets assume the following example is perfect way to do API request and I will use it in examples.
+ calls, so let's assume the following example is the perfect way to do API request and I will use it in examples.
 
 ```kotlin
 class MyActivity : Activity {
@@ -42,14 +40,14 @@ class MyActivity : Activity {
 ```
 
 So I will say again. This is not a scope of this article so we ignore issues like:
-- Multiple request will be done after re-creating activity (eg. rotation the screen).
-- Creating multiple threads that is not memory and CPU efficient.
+- Multiple requests will be done after re-creating activity (eg. rotation the screen).
+- Creating multiple threads that are not memory and CPU efficient.
 - Memory leaks that are caused by threads.
 - Crashes can be caused by returning value in wrong activity state (eg. after `onDestory()` ).
 
-There are lot of solutions for those problems, but we will focus on showing errors to user.
+There are a lot of solutions for those problems, but we will focus on showing errors to the user.
 
-## Ugly way
+# Ugly way
 
 So the simples solution for error handling will be:
 
@@ -65,19 +63,19 @@ fun load() {
 }
 ```
 
-And yas this way is better han nothing but its quite a farr away of the good one.
+And yes, this way is better than nothing, but it's quite a far away from the good one.
 
 1. It does not say what is wrong.
-2. Error will disapear after a while, so user may didn't notice this toast.
-3. When user hit refresh (execute `load()` again) and data will finally load but toast can still be on his screen. He see error and succesed loaded data.
+2. An error will disappear after a while, so user may don't notice this toast.
+3. When a user hit refresh (execute `load()` again) and data will finally load but toast can still be on his screen. He sees an error and success loaded data.
 4. Does not support showing progress.
 
-## Be stateful
+# Be stateful
 
 We use `Option<X>` from popular [funKTionale library](https://github.com/MarioAriasC/funKTionale).
 This is simple type that can hold absent value `var error = Option.None`, or real value `var error = Option.Some(IOException())`.
 
-So to handle our error handling in stateful way, we change our code to:
+So to handle our error handling in a stateful way, we change our code to:
 
 ```kotlin
 var error: Option<Exception> = Option.None
@@ -103,8 +101,8 @@ fun showError() {
 
 **TIP**: `fun <R> Option<T>.fold(ifEmpty: () -> R, some: (T) -> R): R` executes and returns first function if value is empty (`Option.None`), or second if value has data (`Option.Some(IOException())`).
 
-Ok.. so lets introduce another functional type called `Either<L, R>`. It also implemented in [funKTionale library](https://github.com/MarioAriasC/funKTionale).
-`Either<L, R>` is a type that can be either left or right. `Either.Right` is usually used as correct answer, and `Either.Left` us used as wrong answer.
+Ok.. so let's introduce another functional type called `Either<L, R>`. It also implemented in [funKTionale library](https://github.com/MarioAriasC/funKTionale).
+`Either<L, R>` is a type that can be either left or right. `Either.Right` is usually used as a correct answer, and `Either.Left` us used as a wrong answer.
 `var result = Either.right("Response")` or `var result = Either.left(IOException())`.
 
 So our code will look like this:
@@ -130,8 +128,8 @@ fun showError() {
 }
 ```
 
-Now our code is more stateful but still far away from clean. It also does not support progress of loading.
-Also this `lateinit` is potential place for crashes.
+Now our code is more stateful but still far away from clean. It also does not support a progress of loading.
+Also, this `lateinit` is a potential place for crashes.
 
 ```kotlin
 object LoadingException : Exception()
@@ -160,10 +158,10 @@ fun showError() {
 
 Now our code:
 1. hide errors when loading success.
-2. error does not dissapear after a while without resolving user problem,
-3. show progress bar.
+2. error does not disappear after a while without resolving user problem,
+3. show the progress bar.
 
-And ofcourse we can shoe more detailed messages
+And of course we can shoe more detailed messages
  
 ```kotlin
 fun showError() {
@@ -186,7 +184,7 @@ fun Context.defaultErrorText(error: Exception): String = when (error) {
 }
 ```
 
-so our code will change to:
+so our code will change:
 ```kotlin
 fun showError() {
     errorTextView.text = it.fold({ defaultErrrorText(it) }, { "" })
@@ -198,7 +196,7 @@ This code is pretty good but it does not allow for customization, like showing n
 
 ## Customizable solution
 
-Lets work on customizable solution. Lets start with an interface `ErrorHandler<T>`:
+Let's work on the customizable solution. Let's start with an interface `ErrorHandler<T>`:
 
 ```kotlin
 interface ErrorHandler<in T> {
@@ -210,7 +208,7 @@ interface ErrorHandler<in T> {
 typealias DismissError = () -> Unit
 ```
 
-This interface allows to handle some types of errors and display them to the user. It will also allow to dismiss errors.
+This interface allows to handle some types of errors and display them to the user. It will also allow dismissing errors.
 
 We also create class `ErrorManager<in T>` (look on [full code](../examples/error-handling/src/main/java/com/jacekmarchwicki/example/MainActivity.kt) later):
 
@@ -225,7 +223,7 @@ class ErrorManager<in T>(private val errorHandlers: List<ErrorHandler<T>>) {
 }
 ```
 
-This class allows add multiple error handlers that supports multiple errors. And use it as one big ErrorHandler that support handling multiple types of errors in multiple ways.
+This class allows adding multiple error handlers that support multiple errors. And use it as one big ErrorHandler that support handling multiple types of errors in multiple ways.
 
 So now our code look like this:
 
@@ -237,7 +235,7 @@ fun showError() {
 }
 ```
 
-Now we will implement first error handler, that will add text view with an error to container with error message. It will remove this view if error will be resolved.
+Now we will implement first error handler, that will add text view with an error to a container with an error message. It will remove this view if the error will be resolved.
 
 
 ```kotlin
@@ -286,7 +284,7 @@ val errorManager = ErrorManager(listOf(
     ))
 ```
 
-Ok... but now requirements has changed and one request can return NotFound (404) error and you should display some nice text error to user.
+Ok... but now requirements have changed and one request can return NotFound (404) error and you should display some nice text error to the user.
  
 ```kotlin
 val errorManager = ErrorManager(listOf(
@@ -319,7 +317,7 @@ inline fun <reified T : K, K> castErrorHandler(crossinline show: (T) -> DismissE
 
 ### Animations
 
-I.e. you have "Like" button. If user click it (during progress) you would like to slowly animate it.
+I.e. you have "Like" button. If user clicks it (during progress) you would like to slowly animate it.
 
 ```kotlin
 val likeErrorManager = ErrorManager(listOf(
@@ -336,7 +334,7 @@ val likeErrorManager = ErrorManager(listOf(
     ))
 ```
 
-and yes.. this is not an issue instead of using `ShowScreenErrorHandler` we can use `SnackbarErrorHandler` that will show snackbar in case actions like liking, sending, saving etc.:
+and yes.. this is not an issue instead of using `ShowScreenErrorHandler` we can use `SnackbarErrorHandler` that will show snack bar in case actions like liking, sending, saving etc.:
 
 ```kotlin
 class SnackbarErrorHandler<in T>(private val view: View, private val text: (T) -> Option<String>) : ErrorHandler<T> {
@@ -350,9 +348,9 @@ class SnackbarErrorHandler<in T>(private val view: View, private val text: (T) -
 }
 ```
 
-### Images
+## Images
 
-We usually some kind of nice image with text when user does not have messages or contacts on lists:
+We usually some kind of nice image with text when the user does not have messages or contacts on lists:
  
 ```kotlin
 val errorManager = ErrorManager(listOf(
@@ -365,7 +363,7 @@ And I think it wouldn't be hard to implement `ViewWithImageErrorHandler` by your
 
 ## EditText
 
-If you implement login view and user type wrong password you can do this like:
+If you implement login screen and user type wrong password you can do this like:
 
 ```kotlin
 val errorManager = ErrorManager(listOf(
@@ -391,7 +389,29 @@ val errorManager = ErrorManager(listOf(
 
 You can imagine how `EditTextErrorView` could be implemented and reused in many places in your code. 
 
-## Snackbar and Views
+# Errors persistence
 
-* For actions (e.g. "Liking", "Sending", "Posting", "Commenting", "Sharing", "Logging in") use non persistent errors like `SnackbarErrorHandler` or other error handlers that can be dismissed.
-* For stateful data (e.g. "List of comments", "List of posts", "Post view", "User details") use persistent errors like `ShowScreenErrorHandler` that do not disapear.
+* For actions (e.g. "Liking", "Sending", "Posting", "Creating", "Commenting", "Sharing", "Logging in") use non persistent errors like `SnackbarErrorHandler`, `EditTextErrorView` or other error handlers that can be dismissed.
+* For stateful data (e.g. "List of comments", "List of posts", "Post view", "User details") use persistent errors like `ShowScreenErrorHandler`, `ViewWithImageErrorHandler` that do not disapear.
+
+[More about errors persistence](error-handling.md#errors-persistence)
+
+# Summary
+
+* Good error handling shouldn't be hard to implement
+* Using this example you can implement very simple and also very powerful error handling to your whole app fairly quickly.
+* Begin with simplest snack bar and error text view solution, then extend to more user-friendly solutions.
+* Reuse your error handling code as described in this tutorial.
+* Implement error handling everywhere where non-programmer error might happen.
+
+# What's more
+
+* [Kotlin and RxJava with extensions functions](kotlin-and-rxjava-with-extensions-functions.md)
+* [Using schedulers while testing your code](using-schedulers-while-testing-your-code.md)
+* [Errors... oh... those errors - Part 1](error-handling.md)
+
+
+# Authors
+
+Author:
+* Jacek Marchwicki [jacek.marchwicki@gmail.com](mailto:jacek.marchwicki@gmail.com)

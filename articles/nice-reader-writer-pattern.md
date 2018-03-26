@@ -158,7 +158,7 @@ class NewDatabase {
 
 # Authors
 Authors:
-* Jacek Marchwicki
+* Jacek Marchwicki [jacek.marchwicki@gmail.com](mailto:jacek.marchwicki@gmail.com)
 
 Corrected by:
 * Piotr Mądry

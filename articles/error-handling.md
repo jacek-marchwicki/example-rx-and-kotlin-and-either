@@ -153,4 +153,9 @@ Errors shouldn't make the user work harder.
 
 # What's more
 
-* Example how to show errors using Kotlin on Android will be presented in next article
+* Example how to show errors using Kotlin on Android is presented in next article - [Errors... oh... those errors - coding](error-handling-coding.md)
+
+# Authors
+
+Author:
+* Jacek Marchwicki [jacek.marchwicki@gmail.com](mailto:jacek.marchwicki@gmail.com)
