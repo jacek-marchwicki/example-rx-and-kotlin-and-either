@@ -1,13 +1,13 @@
 # How to find StackOverflowError's
 
 ## Abstract
-Sometimes you see StackOverflowError's on some devices. Some of them you can't reproduce on your device or those crashes appear in unexpected situations. There are some tips that will allow finding those issues easier.
+Sometimes you see StackOverflowError's on some devices. Some of them you can't reproduce on your device or the crashes come about in unexpected situations. There are some tips that will allow finding the issues more easily.
 
 ## Description.
-Usually, StackOverflowError appears unexpected and sometimes it's hard to trace them with just stack trace that you will get from a crash on your device or from a crash on your crash reporter. On Android, different devices have different stack size depending on API level or even manufacturer. So the good way is to easily catch StackOverflowError is to decrease stack trace on an emulator.
+Usually, StackOverflowError appears unexpectedly and sometimes it's hard to trace them with just a stack trace that you will get from a crash on your device or from a crash on your crash reporter. On Android, different devices have different stack size depending on the API level or even manufacturer. So the good way is to easily catch StackOverflowError is to decrease a stack trace on an emulator.
 
 ## Decreasing stack size
-Run Dalivik emulator (before API level 5, I didn’t check this solution on ART emulators). Now you need to decrease stack size:
+Run Dalivik emulator (before API level 5, I didn’t check this solution on ART emulators). Now you need to decrease the stack size:
 
 ```bash
 adb root
@@ -16,39 +16,40 @@ adb shell setprop dalvik.vm.extra-opts -Xss10280
 adb shell start
 ```
 
-Now you emulator will restart. You neet to look on your logcat for errors like this: 
+Now, your emulator will restart. You need to look at your logcat for errors like these:
+
 ```
 I/vm-printf: Invalid -Xss '-Xss1', range is 1280 to 262912
 I/vm-printf:   -XssN  (stack size, >= 1KB, <= 256KB)
 ```
 
-If you see such issue it means that you gave too small or too large stack size (In this case `-Xss1` - One byte of stack size was obviously too small ;) )
+If you see such a notification, it means that you have given too small or too large a stack size (In this case `-Xss1` - One byte of a stack size has obviously been too small ;) )
 
-Also if you give too small stack size your emulator can crash because Android OS is not to be meant to support 1kB of stack size ;)
-You need to experiment with a value that suites for your needs.
+What’s more, if you give too small a stack size, your emulator can crash because Android OS is not meant to support 1kB of a stack size ;)
+You need to experiment with a value that suites your needs.
 
 ## Caching issue
 
-The good way is to start in debug mode and catch the exception before it appears.
+The good way is to start in the debug mode and catch the exception before it appears.
 
 ### Setting up a breakpoint
-So at start setup breakpoint for StackOverflowError on Android Studio.
+So first, setup a breakpoint for StackOverflowError on Android Studio.
 
-1. From menu choose *Run* -> *View Brakepoints...* or CMD+Shift+F8
+1. In the menu choose *Run* -> *View Brakepoints...* or *CMD+Shift+F8*
 2. Click *+* -> *3. Jave Exception Brakepoints*
 3. Search for `StackOverflowError`
 4. Click *OK*
 5. Click *Done*
 
-Now you have breakpoint set.
+Now, you have a breakpoint set.
 
 ### Running application
 
-Run your application in debug mode and click until your exception will catch.
+Run your application in the debug mode and click until your exception will catch.
 
 ### Looking for important information
 
-When breakpoint will catch your issue you can easily navigate through entire stack and find useful information.
+When a breakpoint will catch your issue you can easily navigate through the entire stack and find useful information.
 
 ## References
 * https://stackoverflow.com/questions/16843357/what-is-the-android-ui-thread-stack-size-limit-and-how-to-overcome-it
