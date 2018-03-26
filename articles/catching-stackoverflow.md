@@ -1,5 +1,8 @@
 # How to find StackOverflowError's
 
+![Stack of stones](catching-stackoverflow/title.jpg)
+Image from https://unsplash.com/photos/eofm5R5f9Kw
+
 ## Abstract
 Sometimes you see StackOverflowError's on some devices. Some of them you can't reproduce on your device or the crashes come about in unexpected situations. There are some tips that will allow finding the issues more easily.
 
