@@ -28,10 +28,10 @@ I/vm-printf:   -XssN  (stack size, >= 1KB, <= 256KB)
 
 If you see such a notification, it means that you have given too small or too large a stack size (In this case `-Xss1` - One byte of a stack size has obviously been too small ;) )
 
-What’s more, if you give too small a stack size, your emulator can crash because Android OS is not meant to support 1kB of a stack size ;)
+What’s more, if you give too small stack size, your emulator can crash because Android OS is not meant to support 1kB of a stack size ;)
 You need to experiment with a value that suites your needs.
 
-## Caching issue
+## Catching issue
 
 The good way is to start in the debug mode and catch the exception before it appears.
 
