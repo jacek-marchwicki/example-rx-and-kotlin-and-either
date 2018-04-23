@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">ExampleRxExtensions</string>
+    <string name="main_activity_send_button">Send</string>
+    <string name="errors_not_yet_loaded">Not yet loaded</string>
+    <string name="errors_no_internet_connection">No internet connection, check your device settings</string>
+    <string name="errors_network_error">Network error, check your connection</string>
+    <string name="errors_not_found">Not found</string>
+    <string name="errors_sign_in_request">Open your browser to login to the network</string>
+    <string name="errors_unknown_error">Unknown error %1$s</string>
+</resources>

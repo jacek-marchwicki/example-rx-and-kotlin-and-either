@@ -301,4 +301,4 @@ testCompile "com.nhaarman:mockito-kotlin-kt1.1:1.5.0"
 
 # Authors
 Authors:
-* Jacek Marchwicki
+* Jacek Marchwicki [jacek.marchwicki@gmail.com](mailto:jacek.marchwicki@gmail.com)
