@@ -1,8 +1,8 @@
-# Nice reader/writer pattern
+# A nice reader/writer pattern
 
 During the implementation of a chat app, I had to implement some kind of lock logic. 
-Usually, code with locking and unlocking become hard to read.
-If a business logic is complicated and you will add complicated locking, your code will become unreadable and unmaintainable.
+Usually, a code with locking and unlocking is hard to read.
+If business logic is complicated and you will add complicated locking, your code will become unreadable and unmaintainable.
 
 # TL;DR;
 
@@ -16,7 +16,7 @@ Compared to bad example:
 
 # Example
 
-Let's start with a database which looks like this:
+Let’s start with a database which looks like this:
 
 ```kotlin
 class OldDatabase {
@@ -27,7 +27,7 @@ class OldDatabase {
 }
 ```
 
-and if you will add element then read it, your code will look like this:
+and if you add an element and then read it, your code will look like this:
 
 ```kotlin
 @Test
@@ -50,7 +50,7 @@ fun `if an item is added, the list is expanded`() {
 }
 ```
 
-It's very, very hard to read. Thankfully, Kotlin has built-in extension functions for `ReadWriteLock` so you can change your code to:
+It’s very, very hard to read. Thankfully, Kotlin has built-in extension functions for `ReadWriteLock` so you can change your code to:
 
 ```kotlin
 @Test
@@ -70,7 +70,7 @@ fun `if an item is added, the list is expanded - nicer`() {
 But still, the code is vulnerable to potential issues like (Use read lock instead of write, or even forget to use locking).
 Also reading the code with something like this `db.internalList = db.internalList.plus("something")` is hard to understand.
 
-So let's write better database with nicer API:
+So let's write a better database with nicer API:
 
 ```kotlin
 @Test
@@ -154,7 +154,7 @@ class NewDatabase {
 # Conclusions
 1. Good patterns makes complicated logic more understandable,
 2. If your code is hard to read you need to rewrite it,
-3. Especially when you write something hard try to refactor your code to black boxes that implement only part of your logic.
+3. Especially when you write something hard, try to refactor your code to black boxes that implement only part of your logic.
 
 # Authors
 Authors:
