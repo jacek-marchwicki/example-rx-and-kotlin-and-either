@@ -306,7 +306,7 @@ If you would like to see how to test look here: [Using schedulers while testing 
 # Authors
 
 Author:
-* Jacek Marchwicki
+* Jacek Marchwicki [jacek.marchwicki@gmail.com](mailto:jacek.marchwicki@gmail.com)
 
 Corrected by:
 * Marcin Adamczewski
