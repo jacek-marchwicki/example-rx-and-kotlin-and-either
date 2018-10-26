@@ -1,16 +1,14 @@
 # A nice reader/writer pattern
 
-During the implementation of a chat app, I had to implement some kind of lock logic. 
-Usually, a code with locking and unlocking is hard to read.
-If business logic is complicated and you will add complicated locking, your code will become unreadable and unmaintainable.
+During the development of a chat app, I had to implement some kind of lock logic. Usually, locking/unlocking code is hard to follow. If complex business logic uses complicated locking, your code becomes unreadable and unmaintainable. However, there is a pattern that can help you writing readable locking/unlocking code.
 
 # TL;DR;
 
-Good example:
+An example of good practice:
 * [NewDatabaseTest](../examples/nice-reader-writer-pattern/src/test/java/com/jacekmarchwicki/locking/NewDatabaseTest.kt)
 * [NewDatabase](../examples/nice-reader-writer-pattern/src/main/java/com/jacekmarchwicki/locking/NewDatabase.kt)
 
-Compared to bad example:
+Compared to an example of bad practice::
 * [OldDatabaseTest](../examples/nice-reader-writer-pattern/src/test/java/com/jacekmarchwicki/locking/OldDatabaseTest.kt)
 * [OldDatabase](../examples/nice-reader-writer-pattern/src/main/java/com/jacekmarchwicki/locking/OldDatabase.kt)
 
@@ -27,11 +25,11 @@ class OldDatabase {
 }
 ```
 
-and if you add an element and then read it, your code will look like this:
+If you add logic for adding and removing list elements, your code will look like this:
 
 ```kotlin
 @Test
-fun `if an item is added, the list is expanded`() {
+fun `if an item is added, it becomes an element of the list`() {
     val lock1 = db.readWriteLock.writeLock()
     try {
         db.internalList = db.internalList.plus("something")
@@ -50,11 +48,11 @@ fun `if an item is added, the list is expanded`() {
 }
 ```
 
-It’s very, very hard to read. Thankfully, Kotlin has built-in extension functions for `ReadWriteLock` so you can change your code to:
+It’s very, very hard to follow. Thankfully, Kotlin has built-in extension functions for `ReadWriteLock` so you can change your code to:
 
 ```kotlin
 @Test
-fun `if an item is added, the list is expanded - nicer`() {
+fun `if an item is added, it becomes an element of the list - nicer`() {
     db.readWriteLock.write { 
         db.internalList = db.internalList.plus("something")
     }
@@ -67,14 +65,13 @@ fun `if an item is added, the list is expanded - nicer`() {
 }
 ```
 
-But still, the code is vulnerable to potential issues like (Use read lock instead of write, or even forget to use locking).
-Also reading the code with something like this `db.internalList = db.internalList.plus("something")` is hard to understand.
-
+But still, the code is vulnerable to potential issues like using read lock instead of write lock, or even forgetting to use locking at all. Also, following the code with something like this: `db.internalList = db.internalList.plus("something")` remains hard.
 So let's write a better database with nicer API:
+
 
 ```kotlin
 @Test
-fun `if an item is added, the list is expanded`() {
+fun `if an item is added, it becomes an element of the list`() {
     db.write { addItem("something") }
 
     assertEquals(listOf("something"), db.read { list })
@@ -96,14 +93,13 @@ fun `if data is written and read in one transaction, data is filled`() {
 }
 ```
 
-and code like `db.read {addItem("something)}` will not even compile.
-
+and if you try writing buggy code like `db.read {addItem("something)}`, it won’t compile.
 Let's do it better:
 
 ```kotlin
 class NewDatabase {
     /**
-     * Interface that will allow only reading from our database
+     * Interface that only allows reading
      */
     interface Read {
         val list: List<String>
@@ -111,18 +107,18 @@ class NewDatabase {
     }
 
     /**
-     * Interface that will allow reading and writing
+     * Interface that allows reading and writing
      */
     interface Write : Read {
         /*
-         * In kotlin we can override val with var so writes will be allowed
+         * In Kotlin, we can override val with var so writes will be allowed
          */
         override var list: List<String>
         fun addItem(item: String)
     }
 
     /**
-     * Actually implementation of database
+     * Actual implementation of database
      *
      * It should be private so none will accidentally call it without locking
      */
@@ -143,7 +139,7 @@ class NewDatabase {
     /*
      * Locking mechanism
      * 
-     * TIP: we use `inline` function so kotlin will make this code faster without creation of objects
+     * TIP: we use `inline` function so Kotlin can make this code faster without creation of objects
      */
     internal val readWriteLock = ReentrantReadWriteLock()
     inline internal fun <T> write(func: Write.() -> T): T = readWriteLock.write { func(implementation) }
@@ -152,13 +148,9 @@ class NewDatabase {
 ```
 
 # Conclusions
-1. Good patterns makes complicated logic more understandable,
-2. If your code is hard to read you need to rewrite it,
+1. Good patterns make complicated logic more understandable.
+2. If your code is hard to follow, you need to rewrite it.
 3. Especially when you write something hard, try to refactor your code to black boxes that implement only part of your logic.
 
 # Authors
-Authors:
 * Jacek Marchwicki [jacek.marchwicki@gmail.com](mailto:jacek.marchwicki@gmail.com)
-
-Corrected by:
-* Piotr Mądry
