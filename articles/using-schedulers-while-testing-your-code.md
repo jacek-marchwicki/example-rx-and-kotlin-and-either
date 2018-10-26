@@ -1,34 +1,33 @@
 # Using schedulers while testing your code
 
-## Let's start with some example
+## Let's start with an example
 
-We would like to implement UI that will send some post to API. Our UI will need a button that will send a post, and a text field called "message" so a user will be able to choose a message that will be posted to the server. Of course, our UI can display errors and will show success (via toast).
-We will implement everything via MVC and will test presenter.
+We would like to implement UI that sends a post to a server. Our UI needs a text field for typing a message and a button for sending it to the server. Of course, the UI displays error/success messages (via toast). We implement everything using MVC architecture and test the presenter.
 
-At a starting point we will have two classes that will be returned from API:
-* `ApiError` - it's used to represent some errors from API,
-* `Post` that represent post that needs to be added to the server.
+At the starting point, there are two classes that represent responses from the API:
+* `ApiError` - represents an error from the API,
+* `Post` - represents a post from the server.
 
-```kt
+```kotlin
 sealed class ApiError {
     object NoNetwork : ApiError()
 }
 data class Post(val message: String)
 ```
 
-We will have some kind of Dao that will contact server:
+There is a kind of model that communicates with the server:
 
-```kt
+```kotlin
 class PostsDao {
-    /* This is not real dao so we fake some response */
+    /* As this is not real dao, we fake a response */
     fun sendToApi(post: Post): Single<Either<ApiError, Post>> = Single.just(Either.right(post) as Either<ApiError, Post>)
             .delay(1, TimeUnit.SECONDS, Schedulers.computation())
 }
 ```
 
-Of course, we will have some UI:
+Of course, there is a UI:
 
-```kt
+```kotlin
 class PostsActivity : AppCompatActivity() {
     val subscription = SerialSubscription()
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -55,9 +54,9 @@ class PostsActivity : AppCompatActivity() {
 ```
 
 
-And presenter:
+And the presenter:
 
-```kt
+```kotlin
 class PostsPresenter(private val postsDao: PostsDao,
                          clickObservable: Observable<Unit>,
                          messageObservable: Observable<String>) {
@@ -73,9 +72,9 @@ class PostsPresenter(private val postsDao: PostsDao,
     }
 ```
 
-So we will add tests:
+Now, finally, tests:
 
-```kt
+```kotlin
 class PostTest {
     private var postsDao = mock<PostsDao> {
         on { sendToApi(any())} doReturn Single.just(Either.left(ApiError.NoNetwork) as Either<ApiError, Post>)
@@ -97,7 +96,7 @@ class PostTest {
     }
 
     @Test
-    fun `if posting fail, show error`() {
+    fun `if posting fails, show error`() {
         val errors = TestSubscriber<Option<ApiError>>()
         val presenter = createPresenter()
         presenter.showErrorText.subscribe(errors)
@@ -125,61 +124,60 @@ class PostTest {
 }
 ```
 
-But actually, we have an issue in the presenter, because we don't change thread that is returned by the presenter. This is not hard to fix.
+But actually, the presenter has an issue with response returning on network thread instead of UI thread. This is not hard to fix.
 
-```kt
+```kotlin
 
-    class PostsPresenter(private val postsDao: PostsDao,
-                         clickObservable: Observable<Unit>,
-                         messageObservable: Observable<String>,
+    class PostsPresenter(/** unchanged **/
                          uiScheduler: Scheduler) {
 
         private val posToApi = clickObservable.withLatestFrom(messageObservable, { _, title -> Post(title)})
-                .switchMap { postsDao.sendToApi(it).toObservable()
-                  .observeOn(uiScheduler) }
+                .switchMap { 
+                    postsDao.sendToApi(it).toObservable()
+                    .observeOn(uiScheduler) 
+                }
                 .replay(1)
 
-        fun connect(): Subscription = posToApi.connect()
-
-        val showErrorText: Observable<ApiError?> = posToApi.map { it.fold({ it }, { null }) }
-        val showSuccessToast: Observable<Unit> = posToApi.filter { it.isRight() }.map { Unit }
+        /** unchanged **/
     }
 ```
 
 and than update presenter with:
 
-```kt
+```kotlin
 private fun createPresenter() = PostsPresenter(postsDao, clickObservable, messageObservable, Schedulers.immediate())
 ```
 
-pretty simple wasn't it?
+Pretty simple, wasn't it?
 
-but now we want to debounce users click on send on 1second, so we update our presenter:
+But now we would like to discard restless clicking on the button. So we use debounce operator to ignore clicks within 1 second:
 
-```kt
+```kotlin
  private val posToApi = clickObservable.debounce(1, TimeUnit.SECONDS, uiScheduler)
                 .withLatestFrom(messageObservable, { _, title -> Post(title)})
-                .switchMap { postsDao.sendToApi(it).toObservable()
-                        .observeOn(uiScheduler)}
+                .switchMap { 
+                    postsDao.sendToApi(it).toObservable()
+                        .observeOn(uiScheduler)
+                }
                 .replay(1)
 ```
 
-And hurray.. everything works... but wait... did you observed time that took for your tests to accomplish?
+And hurray... everything works... but wait... did you see how much time it took for your tests to accomplish?
 
-It was 66ms before and now its 3s and 66ms? Maybe this is not a problem for this small test suite. But if you will have a test suite that contains 1000 or 10000 tests this can become 15minutes/3hours longer for your build to finish.
+It was 66 ms before and now its 3 s? It might not be a problem for this small test suite but if you have one that contains 1,000 or 10,000 tests, your executions will take, respectively, 15 mins or 3 hrs longer.
 
-So what is a solution? The answer is `TestScheduler` (Schedulers.test()). Test scheduler allows manimpulating time. So we will change our test initialization to:
+So what’s the solution? The answer is `TestScheduler` (`Schedulers.test()`). Test scheduler allows manipulating time. We change our test’s initialization to:
 
-```kt
+```kotlin
 private val uiScheduler = Schedulers.test()
 private fun createPresenter() = PostsPresenter(postsDao, clickObservable, messageObservable, uiScheduler)
 ```
 
 then we need to give instructions to the test, with how much time has passed:
 
-```kt
+```kotlin
 @Test
-fun `if posting fail, show error`() {
+fun `if posting fails, show error`() {
     val errors = TestSubscriber<ApiError>()
     val presenter = createPresenter()
     presenter.showErrorText.subscribe(errors)
@@ -193,30 +191,31 @@ fun `if posting fail, show error`() {
 }
 ```
 
-Using `uiScheduler.advanceTimeBy(1, TimeUnit.SECONDS)` we virtually move into the future by one second. And yes... it's possible to move even 1 year into the future ;)
+Time machine, `uiScheduler.advanceTimeBy(1, TimeUnit.SECONDS)`, sends execution into the future one second away. And yes... it's possible to go even 1 year into the future ;)
+However, usage of `TestScheduler` can be a little annoying. Let's remove debounce from our code:
 
-But TestScheduler can be a little annoying in some situations. Lest's remove debounce from our code:
-
-```kt
+```kotlin
 private val posToApi = clickObservable
         .withLatestFrom(messageObservable, { _, title -> Post(title)})
-        .switchMap { postsDao.sendToApi(it).toObservable()
-                .observeOn(uiScheduler)}
+        .switchMap {
+            postsDao.sendToApi(it).toObservable()
+                .observeOn(uiScheduler)
+        }
         .replay(1)
 ```
 
-and still use TestScheduler it test initialization:
+and still use `TestScheduler` it in test’s initialization:
 
-```kt
+```kotlin
 private val uiScheduler = Schedulers.test()
 private fun createPresenter() = PostsPresenter(postsDao, clickObservable, messageObservable, uiScheduler)
 ```
 
-and test code without `advanceTimeBy`:
+Test code without `advanceTimeBy`:
 
-```kt
+```kotlin
 @Test
-fun `if posting fail, show error`() {
+fun `if posting fails, show error`() {
     val errors = TestSubscriber<ApiError>()
     val presenter = createPresenter()
     presenter.showErrorText.subscribe(errors)
@@ -229,12 +228,11 @@ fun `if posting fail, show error`() {
 }
 ```
 
-And now test will fail :/ What happened? If you'll switch to `Schedulers.immediate()` your test code will work. This is because scheduling (`.observeOn`, `.subscribeOn`) via TestScheduler need to be invoked by `uiScheduler.advanceTimeBy()` or by `uiScheduler.triggerActions()`, so you need to change your test code to:
+And now the test fails :/ What happened? If you switch back to `Schedulers.immediate()`, your test code will work. This is because scheduling (`.observeOn`, `.subscribeOn`) on `TestScheduler` needs to be triggered by `uiScheduler.advanceTimeBy()` or by `uiScheduler.triggerActions()`, so you need to change your test code to:
 
-
-```kt
+```kotlin
 @Test
-fun `if posting fail, show error`() {
+fun `if posting fails, show error`() {
     val errors = TestSubscriber<ApiError>()
     val presenter = createPresenter()
     presenter.showErrorText.subscribe(errors)
@@ -248,9 +246,9 @@ fun `if posting fail, show error`() {
 }
 ```
 
-And this is ugly... It's definitely ugly if you need to think about threads in your tests when you don't want to. Isn't be cool to have a Scheduler that will work instantly for instant schedules and manually for time-delayed schedules? I'll give you one that took minutes to implement:
+And this is ugly... Nothing more awful than thinking about threads when you test business logic. Wouldn’t it be cool to have a Scheduler that triggers actions instantly for instant subscriptions and, for time-delayed subscriptions, leaves triggering to me? I'll give you one that takes a minute to implement:
 
-```kt
+```kotlin
 class ImmediateTestScheduler : TestScheduler() {
     inner class WrappingWorker(private val worker: Worker) : Worker() {
         override fun schedule(action: Action0?): Subscription = 
@@ -271,21 +269,31 @@ class ImmediateTestScheduler : TestScheduler() {
 }
 ```
 
-If you will use this scheduler in your code:
-```kt
-private val uiScheduler = Schedulers.test()
+**TIP**: Implementation for RxJava 2 you can find [here](../examples/schedulers/src/test/java/com/example/scheduler/InstantTestScheduler.java).
+
+If you use this scheduler in your code:
+
+```kotlin
+private val uiScheduler = ImmediateTestScheduler()
 private fun createPresenter() = PostsPresenter(postsDao, clickObservable, messageObservable, uiScheduler)
 ```
 
-You will no longer need to invoke `uiScheduler.triggerActions()` this will be done automatically.
-
+You will no longer need to invoke `uiScheduler.triggerActions()`, this will be done automatically.
 
 ## Conclusions
 
-1. Don't care about threading changes in your tests if you don't want to check threading,
-2. Don't use Schedulers.immediate() so your tests will be quicker and more reliable,
-3. Don't use TestSubscriber.await* methods because they can be flaky if tests will take more time to finish,
-4. Use ImmediateTestScheduler() in your tests - so they will be fast and reliable.
+1. Don't care about threading in your tests if you don't want to check threading,
+2. Don't use `Schedulers.immediate()` because your tests execution will be slow and not reliable,
+3. Don't use `TestSubscriber.await*` methods because the test can be flaky if execution needs more time to complete,
+4. Use `ImmediateTestScheduler()` in your tests for them to be fast and reliable.
+
+## Full code
+The full code for RxJava 2 you can find here:
+
+* [InstantTestScheduler](../examples/schedulers/src/test/java/com/example/scheduler/InstantTestScheduler.java).
+* [InstantTestSchedulerTest](../examples/schedulers/src/test/java/com/example/scheduler/InstantTestSchedulerTest.kt).
+* [PostsPresenterTest](../examples/schedulers/src/test/java/com/example/scheduler/PostsPresenterTest.kt).
+* [PostsPresenter](../examples/schedulers/src/main/java/com/example/scheduler/PostsPresenter.kt).
 
 
 ## Used libraries
@@ -300,5 +308,4 @@ testCompile "com.nhaarman:mockito-kotlin-kt1.1:1.5.0"
 ```
 
 # Authors
-Authors:
 * Jacek Marchwicki [jacek.marchwicki@gmail.com](mailto:jacek.marchwicki@gmail.com)
