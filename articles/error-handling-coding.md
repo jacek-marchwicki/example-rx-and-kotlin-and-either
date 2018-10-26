@@ -2,54 +2,49 @@
 
 ![Woman blows a bubble with bubblegum. Source: https://unsplash.com/photos/66ufHo7498k](error-handling-coding/cover2.jpg)
 
-Some time ago, I wrote an article about how important it is to handle errors in a nice way. In the article [Errors... oh... those errors](error-handling.md), I made a promise that there would be a continuation with coding examples. This is the continuation.
+Some time ago, I wrote an article about how important it is to handle errors in a nice way. In the article [Errors... oh... those errors]error-handling.md), I made a promise that there would be a continuation with coding examples. This is it.
 
 Main objectives:
 - Almost `0 code` to use,
 - Customizable,
 - Extendable.
 
-
 # TL;DR:
 
-The full code of the example is available [here](../examples/error-handling/src/main/java/com/jacekmarchwicki/example/MainActivity.kt)
+The full exemplary code is available [here](../examples/error-handling/src/main/java/com/jacekmarchwicki/example/MainActivity.kt).
 
 # Idea
 
-The idea of errors is quite simple. They can appear in some time and can be resolved in the future. 
-Sometimes they can be resolved without user interaction (like user device will reconnect to WiFi network automatically).
-
-So, a good way of thinking about errors is that they are some kind of a temporary state of the application, that should be presented to a user.
-I think the word `state` is pretty important when we would like to implement error handling.
+The idea of error messages is quite simple. They appear and, once the error is resolved, disappear. Sometimes it happens without user’s interaction (like when a user’s device reconnects to WiFi network automatically).
+So, a good way of thinking about errors is that they are a temporary state of an application, which should be displayed to a user. I think the word *state* is important while implementing error handling.
 
 # Testimony
 
-This article is not about how you should make requests to your API, and how you should handle async
- calls, so let's assume the following example is the perfect way to do API request and I will use it in examples.
+This article isn’t about how you should make requests to your API, and how you should handle asynchronous calls, so let's assume the following is the perfect way to do API requests and let me use it in further examples.
 
 ```kotlin
 class MyActivity : Activity {
     private fun execute(success: (String) -> Unit, failure: (Errors) -> Unit) {
-        Thread({
+        Thread {
             runOnUiThread {
                 if (result.isSuccess) success(result.ok) else failure(result.exception)
             }
-        }).start()
+        }.start()
     }
 }
 ```
 
-So I will say again. This is not the scope of this article, so we ignore issues like:
-- Multiple requests will be done after re-creating activity (eg. rotation the screen).
-- Creating multiple threads that are not memory and CPU efficient.
-- Memory leaks that are caused by threads.
-- Crashes can be caused by returning value in a wrong activity state (eg. after `onDestory()` ).
+I’ll say it again. We ignore issues like:
+- Multiple requests after re-creating activity (e.g. rotation of the screen).
+- Creating multiple threads (neither memory-, nor CPU-efficient).
+- Memory leaks caused by unfinished threads.
+- Crashes caused by returning value in a wrong activity state (e.g. after `onDestory()`).
 
-There are a lot of solutions to these problems, but we will focus on showing errors to the user.
+There are lots of solutions to these problems, but we focus on displaying error messages to the user.
 
 # Ugly way
 
-So the simplest solution for error handling will be:
+So the simplest solution for error handling would be:
 
 ```kotlin
 fun load() {
@@ -63,19 +58,18 @@ fun load() {
 }
 ```
 
-And yes, this way is better than nothing, but it's quite far away from the good one.
-
-1. It does not say what is wrong.
-2. An error will disappear after a while, so user may not notice this toast.
-3. When a user hits refresh (execute `load()` again) and data will finally load but toast can still be on his screen. He sees an error and success loaded data.
-4. Does not support showing progress.
+And yes, this way is better than nothing, but it's quite far from good.
+1. It doesn’t say what’s wrong.
+2. An error message disappears after a while, so a user may not notice the toast.
+3. When a user hits the refresh button (execute `load()` again), data finally loads but the toast of the previous error still lingers on the screen. The user sees simultaneously the  error message and the successfully loaded data.
+4. It doesn’t support displaying progress.
 
 # Be stateful
 
-We use `Option<X>` from popular [funKTionale library](https://github.com/MarioAriasC/funKTionale).
+We use `Option<X>` from popular [funKTionale library](https://github.com/MarioAriasC/funKTionale). 
 This is a simple type that can hold absent value `var error = Option.None`, or real value `var error = Option.Some(IOException())`.
 
-So to handle our error handling in a stateful way, we change our code to:
+So to handle our error management in a stateful way, we change our code to:
 
 ```kotlin
 var error: Option<Exception> = Option.None
@@ -85,27 +79,25 @@ fun load() {
         success = {
             textView.text = "OK"
             error = Option.None
-            showError()
+            showHideError()
         },
         failure = { exception ->
             textView.text = ""
             error = Option.Some(exception)
-            showError()
+            showHideError()
         })
 }
 
-fun showError() {
+fun showHideError() {
     errorTextView.text = it.fold({""}, {"Some error..."})
 }
 ```
 
-**TIP**: `fun <R> Option<T>.fold(ifEmpty: () -> R, some: (T) -> R): R` executes and returns first function if a value is empty (`Option.None`), or the second if a value has data (`Option.Some(IOException())`).
+**TIP**: `fun <R> Option<T>.fold(ifEmpty: () -> R, some: (T) -> R): R` executes and returns the first function if the value’s empty (`Option.None`), or the other one if the value’s defined (`Option.Some(IOException())`).
 
-Ok.. so let's introduce another functional type called `Either<L, R>`. It is also implemented in [funKTionale library](https://github.com/MarioAriasC/funKTionale).
-`Either<L, R>` is a type that can be either left or right. `Either.Right` is usually used as the correct answer, and `Either.Left` is used as the wrong answer.
-`var result = Either.right("Response")` or `var result = Either.left(IOException())`.
-
-So our code will look like this:
+Ok... so let's introduce another functional type called `Either<L, R>`,  also available in [funKTionale library](https://github.com/MarioAriasC/funKTionale). \
+`Either<L, R>` is a type that contains either left or right value. `Either.Right` is usually used as the correct answer, and `Either.Left` is used as the wrong answer. `var result = Either.right("Response")` or `var result = Either.left(IOException())`.
+So our code would now look like this:
 
 ```kotlin
 lateinit var result: Either<String, Exception>
@@ -114,22 +106,21 @@ fun load() {
     execute(
         success = {
             result = Either.left("OK")
-            showError()
+            showHideError()
         },
         failure = { exception ->
             result = Either.right(exception)
-            showError()
+            showHideError()
         })
 }
 
-fun showError() {
+fun showHideError() {
     errorTextView.text = it.fold({"Some error..."}, {""})
     textView.text = it.fold({""}, {"Response: $it"})
 }
 ```
 
-Now, our code is more stateful but still far from being clean. It also does not support a progress of loading.
-Also, this `lateinit` is a potential place for crashes.
+Now, our code is more stateful but still far from clean. It still doesn’t support displaying progress. Also, this particular lateinit is crash-prone.
 
 ```kotlin
 object LoadingException : Exception()
@@ -138,33 +129,33 @@ var result: Either<String, Exception> = Either.left(LoadingException)
 
 fun load() {
     result = Either.left(LoadingException)
-    showError()
+    showHideError()
     execute(
         success = {
             result = Either.left("OK")
-            showError()
+            showHideError()
         },
         failure = { exception ->
             result = Either.right(exception)
-            showError()
+            showHideError()
         })
 }
 
-fun showError() {
+fun showHideError() {
     errorTextView.text = it.fold({if (it == LoadingException) "Loading..." else "Some error..."}, {""})
     textView.text = it.fold({""}, {"Response: $it"})
 }
 ```
 
 Now our code:
-1. hides errors when loading success.
-2. error does not disappear after a while without resolving user problem,
-3. shows the progress bar.
+1. hides error messages when loading succeeds,
+2. prevents error messages from disappearing unless the problem is resolved,
+3. shows the progress indicator.
 
-And, of course we can show more detailed messages
+Furthermore, we can display more detailed messages
  
 ```kotlin
-fun showError() {
+fun showHideError() {
     errorTextView.text = it.fold({ when (it) {
          LoadingException-> "Loading..."
          is IOException -> "Problem with API ${it.errorMessage}"
@@ -174,7 +165,7 @@ fun showError() {
 }
 ```
 
-Now, we can add some useful functions that will better highlight our errors:
+Now, we can add a common function that will better describe what went wrong:
 
 ```kotlin
 fun Context.defaultErrorText(error: Exception): String = when (error) {
@@ -184,33 +175,33 @@ fun Context.defaultErrorText(error: Exception): String = when (error) {
 }
 ```
 
-so our code will change:
+so our code will change to:
+
 ```kotlin
-fun showError() {
+fun showHideError() {
     errorTextView.text = it.fold({ defaultErrrorText(it) }, { "" })
     textView.text = it.fold({ "" }, { "Response: $it" })
 }
 ```
 
-This code is pretty good but it does not allow for customization, like showing nice images or adding fancy animations. It even does not allow to show spinner instead of `Loading...` text.
+This looks pretty good but it doesn’t allow customization like showing nice images or adding fancy animations. It doesn’t even allow showing a spinner instead of *Loading...* text.
 
 ## Customizable solution
 
-Let's work on the customizable solution. Let's start with an interface `ErrorHandler<T>`:
+Let's work on the customizable solution, starting with the interface `ErrorHandler<T>`:
 
 ```kotlin
 interface ErrorHandler<in T> {
     /**
      * Return value when error is handled
      */
-    fun showError(error: T): Option<DismissError>
+    fun showHideError(error: T): Option<DismissError>
 }
 typealias DismissError = () -> Unit
 ```
 
-This interface allows to handle some types of errors and display them to the user. It will also allow to dismiss error.
-
-We also create class `ErrorManager<in T>` (look on [full code](../examples/error-handling/src/main/java/com/jacekmarchwicki/example/MainActivity.kt) later):
+This allows handling some types of errors and displaying/dismissing them.
+We also create `ErrorManager<in T>` class (take a look at [full code](../examples/error-handling/src/main/java/com/jacekmarchwicki/example/MainActivity.kt) later):
 
 ```kotlin
 class ErrorManager<in T>(private val errorHandlers: List<ErrorHandler<T>>) {
@@ -219,28 +210,26 @@ class ErrorManager<in T>(private val errorHandlers: List<ErrorHandler<T>>) {
     /**
      * Present error to user
      */
-    fun showError(error: Option<T>) = TODO("Implementation in example source")
+    fun showHideError(error: Option<T>) = TODO("Implementation in the source code")
 }
 ```
 
-This class allows to add multiple error handlers that support multiple errors. And use it as one big ErrorHandler that supports handling multiple types of errors in multiple ways.
-
+This class allows adding multiple error handlers. Each error handler supports a different class of errors. As a result, we get one big ErrorManager that supports handling multiple types of errors in multiple ways.
 So now our code looks like this:
 
 ```kotlin
 val errorManager = ErrorManager(listOf(/** list of error managers **/ ))
-fun showError() {
-    errorManager.showError(it.left().toOption())
+fun showHideError() {
+    errorManager.showHideError(it.left().toOption())
     textView.text = it.fold({ "" }, { "Response: $it" })
 }
 ```
 
-Now we will implement the first error handler, that will add a text view with an error to a container with an error message. It will remove this view if the error will be resolved.
-
+We implement the first error handler that adds a text view to a container with an error message. Error handler removes the view as soon as the error is resolved.
 
 ```kotlin
 class ShowScreenErrorHandler<in T>(private val view: ViewGroup, private val text: (T) -> Option<String>) : ErrorHandler<T> {
-    override fun showError(error: T): Option<DismissError> = text(error)
+    override fun showHideError(error: T): Option<DismissError> = text(error)
             .map {
                 val newView = LayoutInflater.from(view.context).inflate(R.layout.error_layout, view, false)
                 view.addView(newView)
@@ -250,21 +239,21 @@ class ShowScreenErrorHandler<in T>(private val view: ViewGroup, private val text
 }
 ```
 
-So now our `errorManager` will look like this:
+So now our errorManager looks like this:
 
 ```kotlin
 val errorManager = ErrorManager<Exception>(listOf(
-                ShowScreenErrorHandler(frameLayout, { Option.Some(defaultErrorText(it)) })
+                ShowScreenErrorHandler(frameLayout), { Option.Some(defaultErrorText(it)) }
         ))
 ```
 
-But as I said, this solution is `customizable` but nothing has changed yet :/ Let's fix this. 
-You decide to add your fancy progress bar to all places in your app instead of `Loading...` indicator. 
-You create new `ErrorHandler`:
+I’ve said before that this solution is *customizable* but nothing has changed yet :/ Let's fix this. 
+You decide that instead of *Loading..*. text you want a fancy spinner everywhere in the app. 
+You create a new `ErrorHandler`:
 
 ```kotlin
 class ProgressErrorHandler(private val view: FrameLayout) : ErrorHandler<Errors> {
-    override fun showError(error: Errors): Option<DismissError> = if (error is LoadingException) {
+    override fun showHideError(error: Errors): Option<DismissError> = if (error is LoadingException) {
         Option.None
     } else {
         val newView = LayoutInflater.from(view.context).inflate(R.layout.progress_layout, view, false)
@@ -285,29 +274,28 @@ val errorManager = ErrorManager(listOf(
     ))
 ```
 
-Ok... But now requirements have changed and one request can return NotFound (404) error and you should display some nice text error to the user.
+Ok... But now requirements have changed and one of the requests may return *NotFound (404)* error. You should display some nice error message to the user.
  
 ```kotlin
 val errorManager = ErrorManager(listOf(
         ProgressErrorHandler(activity_main_content),
-        ShowScreenErrorHandler(activity_main_content, {
+        ShowScreenErrorHandler(activity_main_content) {
             Option.Some(when (it) {
                 NotFoundException -> "Page deleted"
                 else -> defaultErrorText(it)
             })
-        })
+        }
 ))
 ```
 
 ## Advanced customization
 
-Now you would like to do something fancy :)
-
-Let's start with some handler that simplifies handling just one error:
+Now you might wanna do something fancy :)
+Let's start with a function that simplifies handling just one error:
 
 ```kotlin
 inline fun <reified T : K, K> castErrorHandler(crossinline show: (T) -> DismissError) : ErrorHandler<K> = object : ErrorHandler<K> {
-    override fun showError(error: K): Option<DismissError> = if (error is T) {
+    override fun showHideError(error: K): Option<DismissError> = if (error is T) {
         Option.Some(show(error))
     } else {
         Option.None
@@ -318,7 +306,7 @@ inline fun <reified T : K, K> castErrorHandler(crossinline show: (T) -> DismissE
 
 ### Animations
 
-I.e. you have "Like" button. If user clicks it (during progress) you would like to slowly animate it.
+I.e. you have a "Like" button. After a user clicks it we show progress by slowly animating the button.
 
 ```kotlin
 val likeErrorManager = ErrorManager(listOf(
@@ -335,11 +323,11 @@ val likeErrorManager = ErrorManager(listOf(
     ))
 ```
 
-and yes... This is not an issue. Instead of using `ShowScreenErrorHandler` we can use `SnackbarErrorHandler` that will show snack bar in for actions (liking, sending, saving etc.):
+And yes... there is no typo. Instead of using `ShowScreenErrorHandler`, we can use `SnackbarErrorHandler` that will show a snack bar:
 
 ```kotlin
 class SnackbarErrorHandler<in T>(private val view: View, private val text: (T) -> Option<String>) : ErrorHandler<T> {
-    override fun showError(error: T): Option<DismissError> = text(error)
+    override fun showHideError(error: T): Option<DismissError> = text(error)
             .map {
                 val snackbar = Snackbar.make(view, it, Snackbar.LENGTH_SHORT)
                         .apply { show() }
@@ -351,7 +339,7 @@ class SnackbarErrorHandler<in T>(private val view: View, private val text: (T) -
 
 ## Images
 
-We usually show some kind of nice image with text when a user does not have messages or contacts on lists:
+We usually display some kind of a nice image with text when a user doesn’t have messages or contacts on the list:
  
 ```kotlin
 val errorManager = ErrorManager(listOf(
@@ -360,18 +348,18 @@ val errorManager = ErrorManager(listOf(
 ))
 ```
 
-And I think it wouldn't be hard to implement `ViewWithImageErrorHandler` by yourself ;)
+And I think it wouldn't be hard for you to implement `ViewWithImageErrorHandler` by yourself ;)
 
 ## EditText
 
-If you implement login screen and user type wrong password you can do like this:
+If you implement a login screen and a user types in a wrong password, you can manage those errors like this:
 
 ```kotlin
 val errorManager = ErrorManager(listOf(
             castErrorHandler<WrongPasswordException, Exception> {
-                passwordTextView.showError("Wrong password")
+                passwordTextView.showHideError("Wrong password")
                 fun() {
-                    passwordTextView.showError()
+                    passwordTextView.showHideError()
                 }
             },
             SnackbarErrorHandler(frameLayout, { Option.Some(defaultErrorText(it)) })
@@ -388,22 +376,22 @@ val errorManager = ErrorManager(listOf(
     ))
 ```
 
-You can imagine how `EditTextErrorView` could be implemented and reused in many places in your code. 
+You can imagine how `EditTextErrorView` could be implemented and reused in different contexts of the app. 
 
-# Errors persistence
+# Error message persistence
 
-* For actions (e.g. "Liking", "Sending", "Posting", "Creating", "Commenting", "Sharing", "Logging in") use non persistent errors like `SnackbarErrorHandler`, `EditTextErrorView` or other error handlers that can be dismissed.
-* For stateful data (e.g. "List of comments", "List of posts", "Post view", "User details") use persistent errors like `ShowScreenErrorHandler`, `ViewWithImageErrorHandler` that do not disappear.
+For actions (e.g. "Liking", "Sending", "Posting", "Creating", "Commenting", "Sharing", "Logging in"), use non-persistent error handlers like `SnackbarErrorHandler`, `EditTextErrorViewHandler`, or others that can be dismissed.
+For stateful data (e.g. "List of comments", "List of posts", "Post view", "User details"), use persistent error handlers like `ShowScreenErrorHandler` or `ViewWithImageErrorHandler` that don’t disappear before the error is resolved.
 
-[More about errors persistence](error-handling.md#errors-persistence)
+[More about error message persistence](error-handling.md#errors-persistence)
 
 # Summary
 
-* Good error handling shouldn't be hard to implement
-* By using this example, you can implement very simple and also very powerful error handling to your whole app fairly quickly.
-* Begin with simplest snack bar and error text view solution, then extend to more user-friendly solutions.
+* Effective error handling shouldn't be hard to implement.
+* By using the code that I proposed, you can implement very simple and very powerful error handling in your whole app fairly quickly.
+* Begin with the simplest snack bar and error text view, then extend them to a more user-friendly solution.
 * Reuse your error handling code as described in this tutorial.
-* Implement error handling everywhere, where a non-programmer error might happen.
+* Implement error handling everywhere, where code-unrelated errors happen, e.g. network issues, wrong http status codes, problems with reading/writing files, no space left on the device issues.
 
 # What's more
 
@@ -414,5 +402,4 @@ You can imagine how `EditTextErrorView` could be implemented and reused in many 
 
 # Authors
 
-Author:
 * Jacek Marchwicki [jacek.marchwicki@gmail.com](mailto:jacek.marchwicki@gmail.com)
