@@ -3,14 +3,14 @@
 ![Spinning top](timetravel/cover.jpg)
 Image from https://unsplash.com/photos/iiRQxPCDQ_Y webpage.
 
-When you develop a real-life app with integrations tests you probably faced problem that time is moving :)
+When you develop a real-life app with integrations tests you probably faced a problem that time is moving :)
 
-It doesn't metter if you develop an alarm clock or a feed app that is less related to time, I'm almost 100% sure that app is more or less time related.
+It doesn't matter if you develop an alarm clock or a feed app that is less related to time, I'm almost 100% sure that app is more or less time-related.
 
-If parts of the app are time based it might be tricky to maintain consistent tests results.
+If parts of the app are time-based it might be tricky to maintain consistent tests results.
 
-During Unit Tests it's a usually good pattern to use `TestScheduler` or even solution that I proposed in ["Using schedulers while testing your code" article](using-schedulers-while-testing-your-code.md), 
-but in integrations tests you need something more real-life.
+During Unit Tests, it's a usually good pattern to use `TestScheduler` or even solution that I proposed in ["Using schedulers while testing your code" article](using-schedulers-while-testing-your-code.md), 
+but in integrations tests, you need something more real-life.
 
 # TL;DR;
 
@@ -45,12 +45,12 @@ class Presenter(uiScheduler: Scheduler, locale: Locale, timeZone: TimeZone) {
 }
 ```
 
-Unit Test for this class are very simple, so I'll skip describing implementation details of those. 
+Unit Test for this class is very simple, so I'll skip describing implementation details of those. 
 You can look at [PresenterTest.kt](../examples/timetravel/src/test/java/com/example/timetravel/PresenterTest.kt) class.
 
 # Let's implement our first UI test
 
-The first test starts activity and check if time label is displayed.
+The first test starts the activity and checks if time label is displayed.
 
 ```kotlin
 @RunWith(AndroidJUnit4::class)
@@ -68,11 +68,11 @@ class MainActivityTest {
 }
 ```
 
-But the test does not check business logic. It doesn't check correctness of label's value.
+But the test does not check business logic. It doesn't check the correctness of the label's value.
 
-# Real life test
+# Real-life test
 
-Now you would like to test if current time is displayed correctly... But guess what.. You don't know what time is now.. and how it should be displayed.
+Now you would like to test if a current time is displayed correctly... But guess what.. You don't know what time is now.. and how it should be displayed.
 
 You could write a test like this:
 
@@ -88,14 +88,14 @@ onView(withId(R.id.main_activity_time))
 But the test actually doesn't test's anything ;) It uses the same logic as it is used inside the application.
 So if the logic is broken your test will silently pass broken code.
 
-You could mock presenter. This is perfectly fine, but your test will become UI test instead of integration test. 
+You could mock the presenter. This is perfectly fine, but your test will become a UI test instead of an integration test. 
 We want integration test. 
 
 # Let's face the problem
 
 ## Problem 1 (time)
 
-The primary problem is that tests executes at the random time, so how to verify if correct value is displayed. 
+The primary problem is that tests execute at the random time, so how to verify if the correct value is displayed. 
 
 ### Idea
 So it would be good to write a JUnit Rule that in some tests time will be faked. Something like this:
@@ -117,19 +117,18 @@ onView(withId(R.id.main_activity_time))
 
 ### Defining the problem
 
-If we have basics of our ideal solution, we should consider how exactly our solution should work.
+If we have the basics of our ideal solution, we should consider how exactly our solution should work.
 1. We want to fake time in tests.
 2. We want to use a rule so we can reuse it in some tests and skip in others.
-3. We don't want to freeze time, so the app during tests behave almost exactly as in production. Time need to flow.
+3. We don't want to freeze time, so the app during tests behave almost exactly as in production. Time needs to flow.
 4. We use RxJava schedulers as a source of the time, so we should fake those.
-5. We would like to modify application behavior as little as possible during testing phase so we check real life scenarios.
+5. We would like to modify application behavior as little as possible during the testing phase so we check real-life scenarios.
 
 ### Choosing a solution
 
 We arg going to implement `TimeTravelRule` with `timeTravel(Date)` method (pt 1 and 2 passed).
-Because scheduler have `Scheduler#now(TimeUnit)` method (pt 4. passed).
-We can only subtract some value of the current time, to calculate faked one, so time in tests will 
-flow from certain moment in time that you defined in test `override fun now(unit: TimeUnit): Long = wrappedScheduler.now(unit) - mockedDifference` (pt. 3 passed).
+Because scheduler has `Scheduler#now(TimeUnit)` method (pt 4. passed).
+We can only subtract some value of the current time, to calculate faked one, so time in tests will flow from a certain moment in time that you defined in test `override fun now(unit: TimeUnit): Long = wrappedScheduler.now(unit) - mockedDifference` (pt. 3 passed).
 We can simply wrap our original scheduler to adjust time and inject it via `RxJavaPlugins.setXyzSchedulerHandler`method (pt 5. passed).
 
 ### Implementing the solution
@@ -203,12 +202,12 @@ onView(withId(R.id.main_activity_time))
 
 The second problem is that when running the test on different devices the test execution may fail. 
 The failure can be caused because a device can be set to different locales or different timezone.
-In our example `13:00` should be displayed as `1:00 PM` in US but as `13:00` in Germany.
+In our example, `13:00` should be displayed as `1:00 PM` in US but as `13:00` in Germany.
 Moreover, `13:00` in UTC isn't the same as `13:00` in `PDT` or `GMT`.
-Of course, we can ensure the device is correctly set before executing tests, but this taidious and can lead to false negatives.
+Of course, we can ensure the device is correctly set before executing tests, but this tedious and can lead to false negatives.
 But what if we want to test booth behaviors at the same test execution?
 
-Wouldn't be nice to use rule to define locales?
+Wouldn't be nice to use a rule to define locales?
 
 ### Idea
 
@@ -249,6 +248,6 @@ fun whenTimeIsMockedInGermany_displayCorrectTime() {
 
 # Conclusions
 
-1. Testing might be tricky but with simple tricks (JUnit Rules) it might be come very simple.
-2. Use rules to simplify your testing code, readable tests code is very helpful when those test fails because of issue.
-3. Be sure your tests work consistent between executions and environments. If your tests are falcky and you can't trust them, they are useless.
+1. Testing might be tricky but with simple tricks (JUnit Rules) it might become very simple.
+2. Use rules to simplify your testing code, readable tests code is very helpful when that test fails because of an issue.
+3. Be sure your tests work consistent between executions and environments. If your tests are flaky and you can't trust them, they are useless.
