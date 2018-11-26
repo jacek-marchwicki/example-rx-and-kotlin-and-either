@@ -307,5 +307,7 @@ testCompile 'org.mockito:mockito-core:2.13.0'
 testCompile "com.nhaarman:mockito-kotlin-kt1.1:1.5.0"
 ```
 
-# Authors
-* Jacek Marchwicki [jacek.marchwicki@gmail.com](mailto:jacek.marchwicki@gmail.com)
+
+# What's more
+* [Solve your problems with time during Android Integration test](timetravel.md)
+* [Kill the sleep in you android tests of a RxJava app](kill-the-sleep)

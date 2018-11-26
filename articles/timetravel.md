@@ -14,9 +14,8 @@ but in integrations tests, you need something more real-life.
 
 # TL;DR;
 
-You can simply fake/adjust current time and locales via [TimeTravelRule](../examples/timetravel/src/androidTest/java/com/example/timetravel/rules/TimeTravelRule.kt).
-, [LocaleTestRule](../examples/timetravel/src/androidTest/java/com/example/timetravel/rules/LocaleTestRule.kt) rules.
-For an usage look here [MainActivityTest](../examples/timetravel/src/androidTest/java/com/example/timetravel/MainActivityTest.kt).
+You can simply fake/adjust current time and locales via [TimeTravelRule](../examples/timetravel/src/androidTest/java/com/example/timetravel/rules/TimeTravelRule.kt), [LocaleTestRule](../examples/timetravel/src/androidTest/java/com/example/timetravel/rules/LocaleTestRule.kt) rules.
+For a usage look here: [MainActivityTest](../examples/timetravel/src/androidTest/java/com/example/timetravel/MainActivityTest.kt).
 
 # Example
 
@@ -251,3 +250,7 @@ fun whenTimeIsMockedInGermany_displayCorrectTime() {
 1. Testing might be tricky but with simple tricks (JUnit Rules) it might become very simple.
 2. Use rules to simplify your testing code, readable tests code is very helpful when that test fails because of an issue.
 3. Be sure your tests work consistent between executions and environments. If your tests are flaky and you can't trust them, they are useless.
+
+# What's more
+* [Kill the sleep in you android tests of a RxJava app](kill-the-sleep)
+* [Using schedulers while testing your code](using-schedulers-while-testing-your-code.md)
