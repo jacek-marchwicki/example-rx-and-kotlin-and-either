@@ -252,5 +252,5 @@ fun whenTimeIsMockedInGermany_displayCorrectTime() {
 3. Be sure your tests work consistent between executions and environments. If your tests are flaky and you can't trust them, they are useless.
 
 # What's more
-* [Kill the sleep in you android tests of a RxJava app](kill-the-sleep)
+* [Kill the sleep in you android tests of a RxJava app](kill-the-sleep.md)
 * [Using schedulers while testing your code](using-schedulers-while-testing-your-code.md)
