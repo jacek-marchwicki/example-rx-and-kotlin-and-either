@@ -24,7 +24,7 @@ class MainActivityBetterTest {
     fun afterStartActivity_verifyIfDataIsDisplayedFromTheServer() {
         activityRule.launchActivity()
 
-        // No Thread.sleep(3000) necessary, because we use RxIdlingResourcesRule
+        // No Thread.sleep(5000) necessary, because we use RxIdlingResourcesRule
 
         onView(withId(R.id.main_activity_text))
                 .check(matches(withText("data from the server")))

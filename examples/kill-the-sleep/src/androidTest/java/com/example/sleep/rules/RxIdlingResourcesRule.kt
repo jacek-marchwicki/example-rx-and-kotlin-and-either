@@ -42,31 +42,66 @@ class RxIdlingResourcesRule : TestWatcher() {
     }
 }
 
-private class IdlingSchedulerWrapper(private val wrapped: Scheduler, private val countingIdlingResource: CountingIdlingResource) : Scheduler() {
+class IdlingSchedulerWrapper(private val wrapped: Scheduler, private val countingIdlingResource: CountingIdlingResource) : Scheduler() {
 
-    inner class IdlingRunnable(private val runnable: Runnable) : Runnable {
+    private class OneTimeIdler(private val referenceCounter: CountingIdlingResource) {
+        private var incremented = false
+        fun acquire() = synchronized(this) {
+            if (!incremented) {
+                referenceCounter.increment()
+                incremented = true
+            }
+        }
+
+        fun release() = synchronized(this) {
+            if (incremented) {
+                referenceCounter.decrement()
+                incremented = false
+            }
+        }
+    }
+
+    private class IdlingRunnableRelease(private val runnable: Runnable, private val oneTimeIdler: OneTimeIdler) : Runnable {
         override fun run() {
-            countingIdlingResource.increment()
+            oneTimeIdler.acquire()
             try {
                 runnable.run()
             } finally {
-                countingIdlingResource.decrement()
+                oneTimeIdler.release()
             }
         }
+    }
+
+    private class DisposableWrapper(private val original: Disposable, private val onDispose: () -> Unit) : Disposable {
+        override fun isDisposed(): Boolean = original.isDisposed
+        override fun dispose() = original.dispose().also { onDispose() }
+    }
+
+    private fun wrap(run: Runnable, func: (Runnable) -> Disposable): Disposable {
+        val oneTimeIdler = OneTimeIdler(countingIdlingResource)
+        oneTimeIdler.acquire()
+        return DisposableWrapper(func(IdlingRunnableRelease(run, oneTimeIdler)), onDispose = { oneTimeIdler.release() })
     }
 
     inner class IdlingWorkerWrapper(private val wrapped: Worker) : Worker() {
         override fun isDisposed(): Boolean = wrapped.isDisposed
         override fun dispose() = wrapped.dispose()
         override fun now(unit: TimeUnit): Long = wrapped.now(unit)
-        override fun schedule(run: Runnable): Disposable = wrapped.schedule(IdlingRunnable(run))
-        override fun schedule(run: Runnable, delay: Long, unit: TimeUnit): Disposable = wrapped.schedule(IdlingRunnable(run), delay, unit)
-        override fun schedulePeriodically(run: Runnable, initialDelay: Long, period: Long, unit: TimeUnit): Disposable = wrapped.schedulePeriodically(IdlingRunnable(run), initialDelay, period, unit)
+        override fun schedule(run: Runnable): Disposable = wrap(run) { wrapped.schedule(it) }
+        override fun schedule(run: Runnable, delay: Long, unit: TimeUnit): Disposable =
+                if (delay <= 0L)
+                    wrap(run) { wrapped.schedule(it, delay, unit) } else
+                    wrapped.schedule(IdlingRunnableRelease(run, OneTimeIdler(countingIdlingResource)), delay, unit)
+
+        override fun schedulePeriodically(run: Runnable, initialDelay: Long, period: Long, unit: TimeUnit): Disposable = wrapped.schedulePeriodically(IdlingRunnableRelease(run, OneTimeIdler(countingIdlingResource)), initialDelay, period, unit)
     }
 
-    override fun schedulePeriodicallyDirect(run: Runnable, initialDelay: Long, period: Long, unit: TimeUnit): Disposable = wrapped.schedulePeriodicallyDirect(IdlingRunnable(run), initialDelay, period, unit)
-    override fun scheduleDirect(run: Runnable): Disposable = wrapped.scheduleDirect(IdlingRunnable(run))
-    override fun scheduleDirect(run: Runnable, delay: Long, unit: TimeUnit): Disposable = wrapped.scheduleDirect(IdlingRunnable(run), delay, unit)
+    override fun schedulePeriodicallyDirect(run: Runnable, initialDelay: Long, period: Long, unit: TimeUnit): Disposable = wrapped.schedulePeriodicallyDirect(IdlingRunnableRelease(run, OneTimeIdler(countingIdlingResource)), initialDelay, period, unit)
+    override fun scheduleDirect(run: Runnable): Disposable = wrap(run) { wrapped.scheduleDirect(it) }
+    override fun scheduleDirect(run: Runnable, delay: Long, unit: TimeUnit): Disposable =
+            if (delay <= 0L)
+                wrap(run) { wrapped.scheduleDirect(it, delay, unit) } else
+                wrapped.scheduleDirect(IdlingRunnableRelease(run, OneTimeIdler(countingIdlingResource)), delay, unit)
     override fun shutdown() = wrapped.shutdown()
     override fun start() = wrapped.start()
     override fun now(unit: TimeUnit): Long = wrapped.now(unit)

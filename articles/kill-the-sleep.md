@@ -194,6 +194,7 @@ fun afterStartActivity_verifyIfDataIsDisplayedFromTheServer() {
 
 * [MainActivityBetterTest.kt](../examples/kill-the-sleep/src/androidTest/java/com/example/sleep/MainActivityBetterTest.kt)
 * [RxIdlingResourcesRule.kt](../examples/kill-the-sleep/src/androidTest/java/com/example/sleep/rules/RxIdlingResourcesRule.kt)
+* [RxIdlingResourcesRuleTest.kt](../examples/kill-the-sleep/src/androidTest/java/com/example/sleep/rules/RxIdlingResourcesRuleTest.kt)
 * [MainActivity, Presenter and Service](../examples/kill-the-sleep/src/main/java/com/example/sleep/MainActivity.kt)
 * [PresenterTest](../examples/kill-the-sleep/src/test/java/com/example/sleep/PresenterTest.kt)
 
@@ -206,6 +207,7 @@ fun afterStartActivity_verifyIfDataIsDisplayedFromTheServer() {
 5. Use `RxIdlingResourcesRule` provided in the article.
 6. If you use idling resources failure will happen only if there will be issue in the code.
 7. You can customize timeout for idling resource `IdlingPolicies#setIdlingResourceTimeout(long timeout, TimeUnit unit)`
+8. *Use [RxIdlingResourcesRule.kt](../examples/kill-the-sleep/src/androidTest/java/com/example/sleep/rules/RxIdlingResourcesRule.kt)*
 
 # What's more
 * [Solve your problems with time during Android Integration test](timetravel.md)
