@@ -1,4 +1,4 @@
-# Kill the sleep in you android tests of a RxJava app
+# Kill the sleep in your android tests of a RxJava app
 
 ![A woman sleeps on edge of a rock](kill-the-sleep/cover.jpg)
 Image from [https://unsplash.com/photos/BzIC8ioj7Ms](https://unsplash.com/photos/BzIC8ioj7Ms)
