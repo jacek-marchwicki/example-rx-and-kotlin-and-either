@@ -3,7 +3,7 @@
 ![A woman sleeps on edge of a rock](kill-the-sleep/cover.jpg)
 Image from [https://unsplash.com/photos/BzIC8ioj7Ms](https://unsplash.com/photos/BzIC8ioj7Ms)
 
-During development of android tests you written something like this:
+During development of Android tests you’ve written something like this:
 
 ```kotlin
 @Test
@@ -18,8 +18,8 @@ fun afterStartActivity_verifyIfDataIsDisplayedFromTheServer() {
 }
 ```
 
-This seams reasonable because the app makes a request in the background, an you need to wait a few seconds before checking 
-the result. I'll try to answer why the value is incorrect.
+This seems reasonable because after starting, the app makes a request in the background so you need to wait a few seconds before checking whether the result is displayed on the screen. 
+I'll try to explain why it’s wrong to have sleep in test code.
 
 
 # TL;DR;
@@ -34,45 +34,46 @@ We have `5000L` value, why? Why 5 seconds of delay?
 
 ## Slow tests
 
-Because we hardcoded 5 seconds delay our test will take at least 5 seconds to accomplish. 
-Maybe it's not a huge time but consider 100 tests with at least a three of such delays per test.
-Quick math: `100 tests * 3 delays * 5seconds = 25 minutes`. 25 Minutes of your expensive time waiting for delays added to test code.
-And usually you only need less then twice of that for you test to accomplish.
+Because we hardcoded a 5-second delay, our test will take at least these 5 seconds to complete. 
+Maybe it's not a huge amount of time but consider 100 tests with at least three delays per test. 
+Quick math: `100 tests * 3 delays * 5 seconds = 25 minutes`. 25 minutes of your pricey time wasted on sitting through delays. 
+Usually, you only need less than half of that time for your test to complete.
 
-## Network is slow
+## Slow network
 
-Again, you hardcoded 5 seconds delay but your tests sometimes fails. 
-It happens from time to time, but you see on your device's screen or on Firebase Test Lab's video that request to server was ongoing.
-Yes, it happen from time to time that network or server is slower. 
-During manual testing you definelty not mark this as bug if server will take a little longer to respond - this is completly normal situation.
-If tests are flaky developers can't trust them. 
-If they fail, we will say: "It's not a problem, probably network issue" but actually at the time new bug were introduced.
-The solution looks pretty simple, just increase the time from 5 seconds to 10 seconds. 
-I guess you know what will happen, your test suite will need 25 minutes more to accmplish.
+Again, you hardcoded a 5-second delay but your tests sometimes fail. 
+Firebase Test Lab shows failures from time to time. 
+After debugging the issue you realize that sometimes, after the delay, the request to a server still goes on so your assertion fails during the request result check. 
+Yes, network and server sometimes happen to be slower. 
+During manual testing you definitely don’t mark this as a bug if the server takes a little longer to respond - this is completely normal. When a test fails, developers say: "It's not a problem, it’s probably a network issue". 
+They’ll ignore the result of such a test even if it rightly finds an issue in the app. 
+Developers can't trust flaky tests. The solution looks pretty simple, just increase the delay time from 5 to 10 seconds. 
+I guess you know what will happen: your test suite will need 25 minutes more to complete.
 
 ## Temporary slowdown of the device
 
-Even if you are not using network connection sleep time can vary between different executions. 
-Your test device can do something in background during test execution, e.g. google account is syncing.
-You don't want to fail your test if it's not your fault.
+Even if you aren’t using network connection, fake request time may vary between different executions. 
+During test execution, your device can do some work in the background, e.g., syncing Google account. 
+You don't want to fail your test because of that.
+
 
 ## Test on a different device
 
-Let's imagine situation that you need to test your code if it works on a device model that you normally not running tests.
-If the device is slower probably a lot of your sleeps will be to small for the new device model. You would need to increase sleep time again. 
+Let's imagine a twist: you need to test your app on a device model that you normally don’t run tests on. 
+If the device’s slower, a lot of your sleeps might be too short for the new device model. 
+You need to increase sleep time again.
 
 ## Code change
 
-During developing of an app you probably introduce changes ;) 
-What requirement has changed a little and you need to do additional request in background that doesn't 
-directly impact your logic but may cause additional delay in tests.
-You shouldn't need to change your tests if app works as expected.
+During app development you probably introduce changes ;) 
+What if a requirement has changed a little and you need to do an additional request that doesn't directly impact your business logic but may cause additional delay in tests? 
+You shouldn't need to change your tests if the app works as expected.
 
 # Solution
 
-The espresso testing framework has a feature called [Idling resources](https://developer.android.com/training/testing/espresso/idling-resource). 
-It allows instruct test case that something is happening so espresso should wait for the task to accomplish.
-Sounds like solution for you problems - it is!
+The Espresso Testing Framework has a feature called [Idling resources](https://developer.android.com/training/testing/espresso/idling-resource). 
+It allows providing for things happening in the background making Espresso wait for  tasks to accomplish. 
+Sounds like the solution for your problems? - it is!
 
 Because you use RxJava we can implement a rule so our code will change to:
 
@@ -92,12 +93,12 @@ fun afterStartActivity_verifyIfDataIsDisplayedFromTheServer() {
 ```
 
 # Implementation
-Espresso has a `CountingIdlingResource()` class that has two methods `countingIdlingResource.increment()` and `countingIdlingResource.decrement()`. 
-You need to call `increment()` method after you start doing some network call and you need to call `decrement()` after you finish execution. 
-RxJava has option to wrap `io()` and `computation()` schedulers by your own via `RxJavaPlugins.setComputationSchedulerHandler { }` and ` RxJavaPlugins.setIoSchedulerHandler { }` methods.
-So now we need to look at the scheduler implementation and wrap it so that will notify `countingIdlingResource` about it work.
+Espresso contains a `CountingIdlingResource()` class that has two methods `countingIdlingResource.increment()` and `countingIdlingResource.decrement()`. 
+You need to call `increment()` method before you start doing a network request and you need to call `decrement()` after you finish execution. 
+In RxJava you can wrap `io()` and `computation()` schedulers via `RxJavaPlugins.setComputationSchedulerHandler { }` and ` RxJavaPlugins.setIoSchedulerHandler { }` methods.
+So now we need to look at the scheduler implementation and wrap it so that it will notify `countingIdlingResource` about scheduled work.
 
-RxJava `Scheduler` is responsible for scheduling runnables so you can simply wrap original runnable with one that do `increment()` and `decrement()`:
+RxJava `Scheduler` is responsible for scheduling runnables so you can simply wrap the original runnable with one that calls `increment()` and `decrement()`:
 
 ```kotlin
 class IdlingRunnable(private val countingIdlingResource: CountingIdlingResourc, private val runnable: Runnable) : Runnable {
@@ -112,7 +113,7 @@ class IdlingRunnable(private val countingIdlingResource: CountingIdlingResourc, 
 }
 ```
 
-Than you need to wrap scheduler with the `IdlingRunnable`:
+Then you need to wrap your scheduler so that  it’d use `IdlingRunnable`:
 
 ```kotlin
 private class IdlingSchedulerWrapper(private val wrapped: Scheduler, private val countingIdlingResource: CountingIdlingResource) : Scheduler() {
@@ -139,7 +140,7 @@ private class IdlingSchedulerWrapper(private val wrapped: Scheduler, private val
 }
 ```
 
-Now we implement rule to inject your scheduler wrapper in RxJava and notify espresso about IdlingResource:
+Now we implement a rule to inject `IdlingSchedulerWrapper` to RxJava and notify Espresso about `IdlingResource`:
 
 ```kotlin
 class RxIdlingResourcesRule : TestWatcher() {
@@ -200,14 +201,12 @@ fun afterStartActivity_verifyIfDataIsDisplayedFromTheServer() {
 
 # Summary
 
-1. Don't use sleeps, the cause that test suite executes slower
-2. Don't use sleeps, because your tests become flaky. 
-3. Don't write flaky tests to trust your test suite.
-4. Use `IdlingResource` so your code executes faster.
-5. Use `RxIdlingResourcesRule` provided in the article.
-6. If you use idling resources failure will happen only if there will be issue in the code.
-7. You can customize timeout for idling resource `IdlingPolicies#setIdlingResourceTimeout(long timeout, TimeUnit unit)`
-8. *Use [RxIdlingResourcesRule.kt](../examples/kill-the-sleep/src/androidTest/java/com/example/sleep/rules/RxIdlingResourcesRule.kt)*
+1. Don't use sleeps as they slow test suite executions down.
+2. Don't use sleeps as they make your test flaky. 
+3. If you want a trustworthy test suite, don’t write flaky tests.
+4. Use Espresso's `IdlingResource`.
+5. *Use [RxIdlingResourcesRule.kt](../examples/kill-the-sleep/src/androidTest/java/com/example/sleep/rules/RxIdlingResourcesRule.kt) provided in the article*.
+6. TIP: You can customize timeout for idling resource `IdlingPolicies#setIdlingResourceTimeout(long timeout, TimeUnit unit)`.
 
 # What's more
 * [Solve your problems with time during Android Integration test](timetravel.md)
